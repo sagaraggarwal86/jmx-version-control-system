@@ -1,9 +1,9 @@
 package io.github.sagaraggarwal86.jmeter.scm.storage;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.Objects;
 
@@ -27,7 +28,7 @@ public final class FileOperations {
 
     /**
      * Thread-safe shared ObjectMapper configured for this plugin's JSON needs.
-     * JavaTimeModule, no date timestamps, indented output, ignores unknown properties (R11).
+     * Custom LocalDateTime handling (ISO 8601), indented output, ignores unknown properties (R11).
      */
     private static final ObjectMapper SHARED_MAPPER = createMapper();
 
@@ -36,7 +37,26 @@ public final class FileOperations {
 
     private static ObjectMapper createMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
+
+        // Custom LocalDateTime ser/deser — avoids jackson-datatype-jsr310 dependency
+        // which is not shipped with JMeter. Output is identical: ISO 8601 strings.
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(LocalDateTime.class, new JsonSerializer<>() {
+            @Override
+            public void serialize(LocalDateTime value, JsonGenerator gen, SerializerProvider provider)
+                    throws IOException {
+                gen.writeString(value.toString());
+            }
+        });
+        module.addDeserializer(LocalDateTime.class, new JsonDeserializer<>() {
+            @Override
+            public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt)
+                    throws IOException {
+                return LocalDateTime.parse(p.getText());
+            }
+        });
+        mapper.registerModule(module);
+
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         mapper.enable(SerializationFeature.INDENT_OUTPUT);

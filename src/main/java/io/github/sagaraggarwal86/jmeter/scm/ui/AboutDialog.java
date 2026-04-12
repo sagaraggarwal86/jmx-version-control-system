@@ -37,7 +37,7 @@ public final class AboutDialog {
 
         JLabel description = new JLabel(
                 "<html>Lightweight local version control for JMeter test plans (.jmx files).<br>" +
-                        "Auto-snapshots on save, linear version history, one-click rollback.<br>" +
+                        "Manual and auto checkpoints, linear version history, one-click rollback.<br>" +
                         "No Git, no SVN, no external tools required.</html>");
         description.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(description);

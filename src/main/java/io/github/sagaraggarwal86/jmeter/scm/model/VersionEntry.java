@@ -15,8 +15,8 @@ public final class VersionEntry {
     private final String file;
     private final LocalDateTime timestamp;
     private final TriggerType trigger;
-    private final String note;
     private final String checksum;
+    private String note;
 
     @JsonCreator
     public VersionEntry(
@@ -57,6 +57,10 @@ public final class VersionEntry {
     @JsonProperty("note")
     public String getNote() {
         return note;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
     }
 
     @JsonProperty("checksum")

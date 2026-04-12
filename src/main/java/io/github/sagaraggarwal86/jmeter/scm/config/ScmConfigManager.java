@@ -5,6 +5,13 @@ import org.apache.jmeter.util.JMeterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Hybrid configuration: global defaults from jmeter.properties + per-plan overrides from index.json.
  * <p>
@@ -13,6 +20,8 @@ import org.slf4j.LoggerFactory;
  *   <li>{@code scm.storage.location} — default storage directory (default: {@code .history})</li>
  *   <li>{@code scm.max.retention} — default max versions retained (default: 20)</li>
  *   <li>{@code scm.lock.stale.minutes} — stale lock timeout in minutes (default: 60)</li>
+ *   <li>{@code scm.autosave.enabled} — auto-save enabled (default: false)</li>
+ *   <li>{@code scm.autosave.interval.minutes} — auto-save interval in minutes (default: 5)</li>
  * </ul>
  */
 public final class ScmConfigManager {
@@ -20,9 +29,15 @@ public final class ScmConfigManager {
     public static final String PROP_STORAGE_LOCATION = "scm.storage.location";
     public static final String PROP_MAX_RETENTION = "scm.max.retention";
     public static final String PROP_LOCK_STALE_MINUTES = "scm.lock.stale.minutes";
+    public static final String PROP_AUTOSAVE_ENABLED = "scm.autosave.enabled";
+    public static final String PROP_AUTOSAVE_INTERVAL = "scm.autosave.interval.minutes";
+    public static final String PROP_TOOLBAR_VISIBLE = "scm.toolbar.visible";
     public static final String DEFAULT_STORAGE_LOCATION = ".history";
     public static final int DEFAULT_MAX_RETENTION = 20;
     public static final int DEFAULT_LOCK_STALE_MINUTES = 60;
+    public static final boolean DEFAULT_AUTOSAVE_ENABLED = false;
+    public static final int DEFAULT_AUTOSAVE_INTERVAL = 5;
+    public static final boolean DEFAULT_TOOLBAR_VISIBLE = true;
     private static final Logger log = LoggerFactory.getLogger(ScmConfigManager.class);
 
     private ScmConfigManager() {
@@ -31,9 +46,6 @@ public final class ScmConfigManager {
 
     /**
      * Returns the storage location, resolved with priority: index.json override > jmeter.properties > default.
-     *
-     * @param index the version index (may be null for initial creation)
-     * @return resolved storage location
      */
     public static String getStorageLocation(VersionIndex index) {
         if (index != null && index.getStorageLocation() != null
@@ -53,9 +65,6 @@ public final class ScmConfigManager {
 
     /**
      * Returns max retention, resolved with priority: index.json override > jmeter.properties > default.
-     *
-     * @param index the version index (may be null)
-     * @return resolved max retention
      */
     public static int getMaxRetention(VersionIndex index) {
         if (index != null && index.getMaxRetention() > 0) {
@@ -64,43 +73,131 @@ public final class ScmConfigManager {
         return getGlobalMaxRetention();
     }
 
-    /**
-     * Returns the global max retention from jmeter.properties or the default.
-     */
     public static int getGlobalMaxRetention() {
-        String prop = getProperty(PROP_MAX_RETENTION);
-        if (prop != null && !prop.isBlank()) {
-            try {
-                int value = Integer.parseInt(prop.trim());
-                if (value > 0) {
-                    return value;
-                }
-                log.warn("{} must be positive, using default: {}", PROP_MAX_RETENTION, DEFAULT_MAX_RETENTION);
-            } catch (NumberFormatException e) {
-                log.warn("Invalid {} value '{}', using default: {}", PROP_MAX_RETENTION, prop, DEFAULT_MAX_RETENTION);
-            }
-        }
-        return DEFAULT_MAX_RETENTION;
+        return getPositiveIntProperty(PROP_MAX_RETENTION, DEFAULT_MAX_RETENTION);
+    }
+
+    public static int getStaleLockMinutes() {
+        return getPositiveIntProperty(PROP_LOCK_STALE_MINUTES, DEFAULT_LOCK_STALE_MINUTES);
+    }
+
+    public static boolean isAutoSaveEnabled() {
+        return getBooleanProperty(PROP_AUTOSAVE_ENABLED, DEFAULT_AUTOSAVE_ENABLED);
+    }
+
+    public static int getAutoSaveIntervalMinutes() {
+        return getPositiveIntProperty(PROP_AUTOSAVE_INTERVAL, DEFAULT_AUTOSAVE_INTERVAL);
+    }
+
+    public static boolean isToolbarVisible() {
+        return getBooleanProperty(PROP_TOOLBAR_VISIBLE, DEFAULT_TOOLBAR_VISIBLE);
     }
 
     /**
-     * Returns the stale lock timeout in minutes.
+     * Persists a property to user.properties and sets it in-memory.
+     * Overwrites the value if the key already exists in user.properties.
      */
-    public static int getStaleLockMinutes() {
-        String prop = getProperty(PROP_LOCK_STALE_MINUTES);
+    public static void setAndPersist(String key, String value) {
+        JMeterUtils.setProperty(key, value);
+        try {
+            Path userProps = getUserPropertiesPath();
+            if (userProps == null) return;
+
+            // Read existing content, replace or append
+            String content = Files.exists(userProps) ? Files.readString(userProps) : "";
+            String line = key + "=" + value;
+
+            if (content.contains(key + "=")) {
+                // Replace existing line
+                content = content.replaceAll("(?m)^" + key.replace(".", "\\.") + "=.*$", line);
+            } else {
+                // Append with SCM header if this is the first scm property
+                if (!content.contains("# SCM Plugin")) {
+                    content += "\n# SCM Plugin Settings\n";
+                }
+                content += line + "\n";
+            }
+
+            Files.writeString(userProps, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            log.debug("Persisted {}={} to user.properties", key, value);
+        } catch (IOException e) {
+            log.warn("Could not persist {} to user.properties: {}", key, e.getMessage());
+        }
+    }
+
+    /**
+     * Writes default SCM properties to user.properties if they are not already present.
+     * Called once on plugin first activation.
+     */
+    public static void ensureDefaultsPersisted() {
+        Path userProps = getUserPropertiesPath();
+        if (userProps == null) return;
+
+        try {
+            String content = Files.exists(userProps) ? Files.readString(userProps) : "";
+
+            Map<String, String> defaults = new LinkedHashMap<>();
+            defaults.put(PROP_STORAGE_LOCATION, DEFAULT_STORAGE_LOCATION);
+            defaults.put(PROP_MAX_RETENTION, String.valueOf(DEFAULT_MAX_RETENTION));
+            defaults.put(PROP_LOCK_STALE_MINUTES, String.valueOf(DEFAULT_LOCK_STALE_MINUTES));
+            defaults.put(PROP_AUTOSAVE_ENABLED, String.valueOf(DEFAULT_AUTOSAVE_ENABLED));
+            defaults.put(PROP_AUTOSAVE_INTERVAL, String.valueOf(DEFAULT_AUTOSAVE_INTERVAL));
+            defaults.put(PROP_TOOLBAR_VISIBLE, String.valueOf(DEFAULT_TOOLBAR_VISIBLE));
+
+            StringBuilder toAppend = new StringBuilder();
+            for (var entry : defaults.entrySet()) {
+                if (!content.contains(entry.getKey() + "=")) {
+                    toAppend.append(entry.getKey()).append("=").append(entry.getValue()).append("\n");
+                }
+            }
+
+            if (toAppend.length() > 0) {
+                if (!content.contains("# SCM Plugin")) {
+                    toAppend.insert(0, "\n# SCM Plugin Settings\n");
+                }
+                Files.writeString(userProps, content + toAppend,
+                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                log.info("Default SCM properties written to user.properties");
+            }
+        } catch (IOException e) {
+            log.warn("Could not write defaults to user.properties: {}", e.getMessage());
+        }
+    }
+
+    private static Path getUserPropertiesPath() {
+        try {
+            String jmeterHome = JMeterUtils.getJMeterHome();
+            if (jmeterHome != null) {
+                return Path.of(jmeterHome, "bin", "user.properties");
+            }
+        } catch (Exception e) {
+            log.debug("Could not resolve user.properties path: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private static int getPositiveIntProperty(String key, int defaultValue) {
+        String prop = getProperty(key);
         if (prop != null && !prop.isBlank()) {
             try {
                 int value = Integer.parseInt(prop.trim());
                 if (value > 0) {
                     return value;
                 }
-                log.warn("{} must be positive, using default: {}", PROP_LOCK_STALE_MINUTES, DEFAULT_LOCK_STALE_MINUTES);
+                log.warn("{} must be positive, using default: {}", key, defaultValue);
             } catch (NumberFormatException e) {
-                log.warn("Invalid {} value '{}', using default: {}",
-                        PROP_LOCK_STALE_MINUTES, prop, DEFAULT_LOCK_STALE_MINUTES);
+                log.warn("Invalid {} value '{}', using default: {}", key, prop, defaultValue);
             }
         }
-        return DEFAULT_LOCK_STALE_MINUTES;
+        return defaultValue;
+    }
+
+    private static boolean getBooleanProperty(String key, boolean defaultValue) {
+        String prop = getProperty(key);
+        if (prop != null && !prop.isBlank()) {
+            return Boolean.parseBoolean(prop.trim());
+        }
+        return defaultValue;
     }
 
     private static String getProperty(String key) {

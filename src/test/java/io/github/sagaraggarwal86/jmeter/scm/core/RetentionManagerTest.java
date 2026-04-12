@@ -90,7 +90,7 @@ class RetentionManagerTest {
         for (int i = 1; i <= count; i++) {
             index.getVersions().add(new VersionEntry(
                     i, String.format("v%03d.jmxv", i), LocalDateTime.now(),
-                    TriggerType.SAVE, null, "checksum" + i));
+                    TriggerType.CHECKPOINT, null, "checksum" + i));
         }
     }
 

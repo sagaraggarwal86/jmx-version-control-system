@@ -47,26 +47,31 @@ public final class SnapshotEngine {
         Objects.requireNonNull(index, "index must not be null");
         Objects.requireNonNull(trigger, "trigger must not be null");
 
-        String checksum = FileOperations.computeChecksum(jmxFile);
+        // Synchronize on index to prevent concurrent save + auto-save races
+        synchronized (index) {
+            String checksum = FileOperations.computeChecksum(jmxFile);
 
-        VersionEntry latest = index.getLatestVersion();
-        if (latest != null && checksum.equals(latest.getChecksum())) {
-            log.debug("Skipping snapshot — identical to latest version {}", latest.getVersion());
-            return null;
+            // Dedup: skip auto-checkpoints if unchanged. CHECKPOINT and RESTORE always create.
+            VersionEntry latest = index.getLatestVersion();
+            if (trigger == TriggerType.AUTO_CHECKPOINT
+                    && latest != null && checksum.equals(latest.getChecksum())) {
+                log.debug("Skipping {} — identical to latest version {}", trigger, latest.getVersion());
+                return null;
+            }
+
+            retentionManager.pruneIfNeeded(storageDir, index);
+
+            int versionNumber = index.getNextVersionNumber();
+            String fileName = FileOperations.snapshotFileName(versionNumber);
+            FileOperations.createSnapshot(jmxFile, storageDir, fileName);
+
+            VersionEntry entry = new VersionEntry(
+                    versionNumber, fileName, LocalDateTime.now(), trigger, note, checksum);
+            indexManager.addVersion(storageDir, index, entry);
+
+            log.info("Created snapshot v{} ({})", versionNumber, trigger);
+            return entry;
         }
-
-        retentionManager.pruneIfNeeded(storageDir, index);
-
-        int versionNumber = index.getNextVersionNumber();
-        String fileName = FileOperations.snapshotFileName(versionNumber);
-        FileOperations.createSnapshot(jmxFile, storageDir, fileName);
-
-        VersionEntry entry = new VersionEntry(
-                versionNumber, fileName, LocalDateTime.now(), trigger, note, checksum);
-        indexManager.addVersion(storageDir, index, entry);
-
-        log.info("Created snapshot v{} ({})", versionNumber, trigger);
-        return entry;
     }
 
     /**
@@ -90,7 +95,7 @@ public final class SnapshotEngine {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Version " + versionNumber + " not found"));
 
-        createSnapshot(jmxFile, storageDir, index, TriggerType.SAVE, "Auto-snapshot before restore to v" + versionNumber);
+        createSnapshot(jmxFile, storageDir, index, TriggerType.RESTORE, "Backup before restoring to v" + versionNumber);
 
         Path snapshotPath = storageDir.resolve(target.getFile());
         FileOperations.atomicRestore(snapshotPath, jmxFile);
@@ -115,6 +120,9 @@ public final class SnapshotEngine {
         VersionEntry latest = index.getLatestVersion();
         if (latest != null && latest.getVersion() == versionNumber) {
             throw new IllegalStateException("Cannot delete the latest version (v" + versionNumber + ")");
+        }
+        if (index.isPinned(versionNumber)) {
+            throw new IllegalStateException("Cannot delete pinned version (v" + versionNumber + "). Unpin it first.");
         }
 
         VersionEntry target = index.getVersions().stream()

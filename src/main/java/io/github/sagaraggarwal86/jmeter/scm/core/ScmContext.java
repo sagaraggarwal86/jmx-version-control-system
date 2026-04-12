@@ -1,16 +1,22 @@
 package io.github.sagaraggarwal86.jmeter.scm.core;
 
 import io.github.sagaraggarwal86.jmeter.scm.config.ScmConfigManager;
+import io.github.sagaraggarwal86.jmeter.scm.model.LockInfo;
 import io.github.sagaraggarwal86.jmeter.scm.model.TriggerType;
 import io.github.sagaraggarwal86.jmeter.scm.model.VersionEntry;
 import io.github.sagaraggarwal86.jmeter.scm.model.VersionIndex;
+import io.github.sagaraggarwal86.jmeter.scm.storage.AuditLogger;
+import io.github.sagaraggarwal86.jmeter.scm.storage.FileOperations;
 import io.github.sagaraggarwal86.jmeter.scm.storage.IndexManager;
 import io.github.sagaraggarwal86.jmeter.scm.storage.LockManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -53,7 +59,8 @@ public final class ScmContext {
     }
 
     /**
-     * Resolves the storage directory path relative to the .jmx file.
+     * Resolves the per-plan storage directory: {@code .history/<jmx-stem>/}
+     * where jmx-stem is the filename without extension (e.g., "test1" for "test1.jmx").
      */
     private static Path resolveStorageDir(Path jmxFile) {
         String storageLocation = ScmConfigManager.getGlobalStorageLocation();
@@ -61,16 +68,20 @@ public final class ScmContext {
         if (parent == null) {
             parent = Path.of(".");
         }
-        return parent.resolve(storageLocation);
+        String stem = jmxFile.getFileName().toString().replaceFirst("\\.[^.]+$", "");
+        return parent.resolve(storageLocation).resolve(stem);
     }
 
     /**
-     * Initializes the context: loads index, acquires lock, performs self-healing.
+     * Initializes the context: migrates legacy layout if needed, loads index,
+     * acquires lock, performs self-healing.
      *
      * @throws IOException if initialization fails
      */
     public void initialize() throws IOException {
         checkNotDisposed();
+
+        migrateLegacyLayout();
 
         this.versionIndex = indexManager.load(storageDir);
 
@@ -82,6 +93,41 @@ public final class ScmContext {
         log.info("SCM context initialized for {} ({} versions, {})",
                 jmxFile.getFileName(), versionIndex.getVersions().size(),
                 readOnly ? "read-only" : "read-write");
+    }
+
+    /**
+     * Auto-migrates legacy flat .history/ layout (pre-per-plan subdirectories).
+     * Detects: .history/index.json exists but .history/&lt;stem&gt;/ does not.
+     * Moves all files (index.json, .lock, v*.jmxv) into the per-plan subdirectory.
+     */
+    private void migrateLegacyLayout() {
+        Path historyRoot = storageDir.getParent(); // .history/
+        if (historyRoot == null) return;
+
+        Path legacyIndex = historyRoot.resolve("index.json");
+        if (!Files.exists(legacyIndex) || Files.exists(storageDir)) {
+            return; // No legacy layout, or already migrated
+        }
+
+        log.info("Migrating legacy .history/ layout to per-plan subdirectory: {}", storageDir);
+        try {
+            Files.createDirectories(storageDir);
+
+            // Move all files from .history/ into .history/<stem>/
+            try (var stream = Files.list(historyRoot)) {
+                stream.filter(Files::isRegularFile).forEach(file -> {
+                    try {
+                        Files.move(file, storageDir.resolve(file.getFileName()),
+                                StandardCopyOption.REPLACE_EXISTING);
+                    } catch (IOException e) {
+                        log.warn("Could not migrate {}: {}", file.getFileName(), e.getMessage());
+                    }
+                });
+            }
+            log.info("Legacy migration complete");
+        } catch (IOException e) {
+            log.warn("Legacy migration failed: {}", e.getMessage());
+        }
     }
 
     /**
@@ -126,25 +172,62 @@ public final class ScmContext {
         return readOnly;
     }
 
+    /**
+     * Returns the current lock info, or null if no lock exists.
+     */
+    public LockInfo getLockInfo() {
+        return lockManager.getLockInfo(storageDir);
+    }
+
+    /**
+     * Force-releases the lock held by another process and re-acquires it.
+     * Clears read-only mode on success.
+     *
+     * @return true if the lock was force-released and re-acquired
+     */
+    public boolean forceReleaseLock() {
+        checkNotDisposed();
+        boolean success = lockManager.forceRelease(storageDir);
+        if (success) {
+            readOnly = false;
+            AuditLogger.logForceReleaseLock(storageDir);
+            log.info("Lock force-released, switching to read-write mode");
+        }
+        return success;
+    }
+
     public boolean isDisposed() {
         return disposed;
     }
 
     /**
-     * Creates a checkpoint snapshot with optional note. Resets dirty tracker if snapshot was created.
+     * Creates a version snapshot with the given trigger type. Resets dirty tracker if snapshot was created.
      *
-     * @param note optional user note (may be null)
+     * @param trigger what caused the snapshot
+     * @param note    optional user note (may be null)
      * @return the new version entry, or null if skipped (deduplication)
      * @throws IOException if snapshot creation fails
      */
-    public VersionEntry createCheckpoint(String note) throws IOException {
+    public VersionEntry createSnapshot(TriggerType trigger, String note) throws IOException {
         checkNotDisposed();
         VersionEntry entry = snapshotEngine.createSnapshot(
-                jmxFile, storageDir, versionIndex, TriggerType.CHECKPOINT, note);
+                jmxFile, storageDir, versionIndex, trigger, note);
         if (entry != null) {
             dirtyTracker.reset(entry.getChecksum());
+            if (trigger == TriggerType.CHECKPOINT) {
+                AuditLogger.logCheckpoint(storageDir, entry.getVersion(), note);
+            } else if (trigger == TriggerType.AUTO_CHECKPOINT) {
+                AuditLogger.logAutoCheckpoint(storageDir, entry.getVersion());
+            }
         }
         return entry;
+    }
+
+    /**
+     * Creates a checkpoint snapshot with optional note.
+     */
+    public VersionEntry createCheckpoint(String note) throws IOException {
+        return createSnapshot(TriggerType.CHECKPOINT, note);
     }
 
     /**
@@ -157,6 +240,7 @@ public final class ScmContext {
         checkNotDisposed();
         snapshotEngine.restore(jmxFile, storageDir, versionIndex, versionNumber);
         dirtyTracker.reset();
+        AuditLogger.logRestore(storageDir, versionNumber);
     }
 
     /**
@@ -168,6 +252,56 @@ public final class ScmContext {
     public void deleteVersion(int versionNumber) throws IOException {
         checkNotDisposed();
         snapshotEngine.deleteVersion(storageDir, versionIndex, versionNumber);
+        AuditLogger.logDelete(storageDir, versionNumber);
+    }
+
+    /**
+     * Clears version history. Preserves kept (pinned) versions and the latest version.
+     *
+     * @return number of versions deleted
+     * @throws IOException if deletion fails
+     */
+    public int clearHistory() throws IOException {
+        checkNotDisposed();
+
+        VersionEntry latest = versionIndex.getLatestVersion();
+        List<VersionEntry> toDelete = versionIndex.getVersions().stream()
+                .filter(e -> !versionIndex.isPinned(e.getVersion()))
+                .filter(e -> latest == null || e.getVersion() != latest.getVersion())
+                .toList();
+
+        for (VersionEntry entry : toDelete) {
+            Path snapshotFile = storageDir.resolve(entry.getFile());
+            try {
+                FileOperations.deleteSnapshot(snapshotFile);
+            } catch (IOException e) {
+                log.warn("Could not delete snapshot {}: {}", entry.getFile(), e.getMessage());
+            }
+        }
+
+        versionIndex.getVersions().removeAll(toDelete);
+        indexManager.save(storageDir, versionIndex);
+        AuditLogger.logClearHistory(storageDir, toDelete.size());
+        return toDelete.size();
+    }
+
+    /**
+     * Prunes excess versions according to current maxRetention setting.
+     * Delegates to RetentionManager (FIFO, skips pinned + latest).
+     *
+     * @return number of versions pruned
+     * @throws IOException if deletion or index save fails
+     */
+    public int pruneExcessVersions() throws IOException {
+        checkNotDisposed();
+        int before = versionIndex.getVersions().size();
+        retentionManager.pruneIfNeeded(storageDir, versionIndex);
+        indexManager.save(storageDir, versionIndex);
+        int pruned = before - versionIndex.getVersions().size();
+        if (pruned > 0) {
+            AuditLogger.logRetentionPrune(storageDir, pruned);
+        }
+        return pruned;
     }
 
     private void checkNotDisposed() {

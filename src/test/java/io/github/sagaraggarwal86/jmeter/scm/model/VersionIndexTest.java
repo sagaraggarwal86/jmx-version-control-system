@@ -12,7 +12,7 @@ class VersionIndexTest {
 
     private static VersionEntry createEntry(int version) {
         return new VersionEntry(version, "v" + String.format("%03d", version) + ".jmxv",
-                LocalDateTime.now(), TriggerType.SAVE, null, "checksum" + version);
+                LocalDateTime.now(), TriggerType.CHECKPOINT, null, "checksum" + version);
     }
 
     @Test
@@ -79,7 +79,7 @@ class VersionIndexTest {
 
     @Test
     void constructorHandlesNullVersionsList() {
-        VersionIndex index = new VersionIndex(1, 20, ".history", null);
+        VersionIndex index = new VersionIndex(1, 20, ".history", null, null);
         assertNotNull(index.getVersions());
         assertTrue(index.getVersions().isEmpty());
     }
@@ -89,7 +89,7 @@ class VersionIndexTest {
         List<VersionEntry> original = new ArrayList<>();
         original.add(createEntry(1));
 
-        VersionIndex index = new VersionIndex(1, 20, ".history", original);
+        VersionIndex index = new VersionIndex(1, 20, ".history", original, null);
         original.clear();
 
         assertEquals(1, index.getVersions().size());

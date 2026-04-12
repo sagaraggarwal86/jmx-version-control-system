@@ -43,19 +43,30 @@ public final class RetentionManager {
 
         log.info("Pruning {} excess version(s) (max retention: {})", excess, maxRetention);
 
-        for (int i = 0; i < excess; i++) {
-            if (index.getVersions().isEmpty()) {
-                break;
+        VersionEntry latest = index.getLatestVersion();
+        int pruned = 0;
+        int i = 0;
+        while (pruned < excess && i < index.getVersions().size()) {
+            VersionEntry candidate = index.getVersions().get(i);
+            if (index.isPinned(candidate.getVersion())
+                    || (latest != null && candidate.getVersion() == latest.getVersion())) {
+                i++;
+                continue;
             }
-            VersionEntry oldest = index.getVersions().get(0);
-            Path snapshotFile = storageDir.resolve(oldest.getFile());
+            Path snapshotFile = storageDir.resolve(candidate.getFile());
             try {
                 FileOperations.deleteSnapshot(snapshotFile);
             } catch (IOException e) {
-                log.warn("Could not delete snapshot file {}: {}", oldest.getFile(), e.getMessage());
+                log.warn("Could not delete snapshot file {}: {}", candidate.getFile(), e.getMessage());
             }
-            index.getVersions().remove(0);
-            log.debug("Pruned version {}: {}", oldest.getVersion(), oldest.getFile());
+            index.getVersions().remove(i);
+            log.debug("Pruned version {}: {}", candidate.getVersion(), candidate.getFile());
+            pruned++;
+        }
+
+        if (pruned < excess) {
+            log.info("Could only prune {} of {} excess versions ({} pinned)",
+                    pruned, excess, excess - pruned);
         }
     }
 }
