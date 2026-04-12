@@ -102,7 +102,7 @@ public final class SnapshotEngine {
                     + ". The version entry exists in the index but the file was deleted from disk.");
         }
 
-        createSnapshot(jmxFile, storageDir, index, TriggerType.RESTORE, "Backup before restoring to v" + versionNumber);
+        createSnapshot(jmxFile, storageDir, index, TriggerType.RESTORE, "Replaced by v" + versionNumber);
 
         FileOperations.atomicRestore(snapshotPath, jmxFile);
 

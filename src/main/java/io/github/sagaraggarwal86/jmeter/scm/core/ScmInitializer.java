@@ -32,6 +32,7 @@ public final class ScmInitializer {
     private final List<Component> scmToolbarComponents = new ArrayList<>();
     private volatile ScmContext currentContext;
     private DirtyIndicator dirtyIndicator;
+    private JButton lockButton;
     private VersionHistoryPanel historyPanel;
     private AutoSaveScheduler autoCheckpointScheduler;
     private boolean uiInstalled;
@@ -132,8 +133,21 @@ public final class ScmInitializer {
                 if (dirtyIndicator != null) {
                     dirtyIndicator.refresh(ctx);
                 }
+                if (lockButton != null) {
+                    refreshLockButton(ctx);
+                }
             }
         });
+    }
+
+    private void refreshLockButton(ScmContext ctx) {
+        if (ctx == null || ctx.isDisposed()) {
+            lockButton.setToolTipText("Version Control: No active context");
+        } else if (ctx.isReadOnly()) {
+            lockButton.setToolTipText("Version Control: Read-only \u2014 click to acquire lock");
+        } else {
+            lockButton.setToolTipText("Version Control: Lock active");
+        }
     }
 
     /**
@@ -317,10 +331,10 @@ public final class ScmInitializer {
         toolbar.add(dirtyIndicator, insertIndex++);
         scmToolbarComponents.add(dirtyIndicator);
 
-        JButton breakLockBtn = createToolbarButton("L", "Break Lock",
-                () -> ScmMenuHandler.triggerBreakLock(this));
-        toolbar.add(breakLockBtn, insertIndex++);
-        scmToolbarComponents.add(breakLockBtn);
+        lockButton = createToolbarButton("L", "Version Control: Lock active",
+                () -> ScmMenuHandler.triggerLock(this));
+        toolbar.add(lockButton, insertIndex++);
+        scmToolbarComponents.add(lockButton);
 
         JButton deleteBtn = createToolbarButton("D", "Delete Versions",
                 () -> ScmMenuHandler.triggerDeleteVersions(this));

@@ -196,6 +196,24 @@ public final class ScmContext {
         return success;
     }
 
+    /**
+     * Attempts to politely acquire the lock (succeeds if missing or stale).
+     * Does not force-release an active lock held by another instance.
+     *
+     * @return true if lock acquired, false if held by another non-stale process
+     */
+    public boolean tryAcquireLock() {
+        checkNotDisposed();
+        if (lockManager.acquire(storageDir)) {
+            readOnly = false;
+            log.info("Lock acquired, switching to read-write mode");
+            return true;
+        }
+        readOnly = true;
+        log.info("Lock held by another instance, switching to read-only mode");
+        return false;
+    }
+
     public boolean isDisposed() {
         return disposed;
     }

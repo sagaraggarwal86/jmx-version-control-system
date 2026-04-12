@@ -123,9 +123,9 @@ public final class SettingsDialog {
         gbc.gridx = 0;
         gbc.gridy = 8;
         gbc.gridwidth = 2;
-        JLabel noteLabel = new JLabel("<html><i>Per-plan settings are saved in index.json.<br>" +
-                "Auto-checkpoint saves script to disk and creates a version.<br>" +
-                "Global defaults can be set in jmeter.properties.</i></html>");
+        JLabel noteLabel = new JLabel("<html><i>Per-plan: saved in index.json (overrides global).<br>" +
+                "Global: saved in user.properties (JMETER_HOME/bin/).<br>" +
+                "Property prefix: scm.* — see user.properties for all settings.</i></html>");
         noteLabel.setForeground(Color.GRAY);
         panel.add(noteLabel, gbc);
 
