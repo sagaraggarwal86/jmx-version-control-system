@@ -19,7 +19,6 @@
   recommend better alternatives
 - After all changes are finalized, self-check for regressions, naming consistency, and adherence to these rules
 - Multi-file changes: present all files together with dependency order noted
-- Conflicting requirements: flag the conflict, pause, and wait for decision
 - Rollback: revert to last explicitly approved file set, then ask how to proceed
 - If context grows large, summarize confirmed state before continuing
 
@@ -34,20 +33,16 @@
 - For every decision point or design choice, present options in a concise table:
 
   | Option | Risk | Effort | Impact | Recommendation |
-              |--------|------|--------|--------|----------------|
+  |--------|------|--------|--------|----------------|
 
   Highlight the recommended option. Keep descriptions brief — one line per cell.
 
 ## Self-Maintenance
 
-- **Auto-optimize CLAUDE.md**: After any session that adds or modifies design decisions, constraints, or architectural
-  details in this file, review CLAUDE.md for redundancy, stale entries, and verbosity. Remove duplicates, compress
-  verbose entries, and ensure every line carries actionable information. Do not wait for the user to request this.
-- **Auto-compact**: When the conversation context grows large (many tool calls, long code reads, repeated file edits),
-  proactively suggest `/compact` to the user before context becomes unwieldy. Do not wait until context is nearly full.
-- **Auto-update README.md**: After any session that adds, removes, or modifies user-facing features, update README.md
-  to reflect the change. Keep feature tables and configuration sections current. Do not wait for the user to request
-  this.
+- **Auto-optimize CLAUDE.md**: After any session that modifies design decisions or architecture, review for redundancy
+  and stale entries. Every line must carry actionable information.
+- **Auto-compact**: Proactively suggest `/compact` before context becomes unwieldy.
+- **Auto-update README.md**: After feature changes, keep README feature tables and config sections current.
 
 ## Build Commands
 
@@ -68,13 +63,13 @@ one-click rollback. Single-user, local-disk operation. No Git, no SVN, no extern
 
 ### Package Structure
 
-| Package   | Key Classes                                                                                                                                                                  |
-|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `model`   | `VersionEntry`, `VersionIndex`, `TriggerType`, `LockInfo`                                                                                                                    |
-| `config`  | `ScmConfigManager` — hybrid: `jmeter.properties` defaults + `index.json` per-plan overrides                                                                                  |
-| `storage` | `FileOperations` (copy, atomic restore, checksum), `IndexManager` (index.json CRUD, self-heal), `LockManager` (.lock)                                                        |
-| `core`    | `ScmContext` (per-plan lifecycle), `ScmInitializer` (lazy init, singleton), `SaveCommandWrapper` (save hook), `SnapshotEngine`, `DirtyTracker`, `RetentionManager`           |
-| `ui`      | `ScmToolbarGroup` (3 buttons), `VersionHistoryPanel` (bottom dockable), `ScmMenuHandler` (Tools menu), `DirtyIndicator`, `CheckpointDialog`, `SettingsDialog`, `AboutDialog` |
+| Package   | Key Classes                                                                                                                                                             |
+|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `model`   | `VersionEntry`, `VersionIndex`, `TriggerType` (CHECKPOINT, AUTO_CHECKPOINT, RESTORE), `LockInfo`                                                                        |
+| `config`  | `ScmConfigManager` — hybrid: `jmeter.properties` defaults + `index.json` per-plan overrides                                                                             |
+| `storage` | `FileOperations` (copy, atomic restore, checksum), `IndexManager` (index.json CRUD, self-heal), `LockManager` (.lock), `AuditLogger` (audit.log, 1MB rotation)          |
+| `core`    | `ScmContext` (per-plan lifecycle), `ScmInitializer` (lazy init, singleton, toolbar), `SaveCommandWrapper` (save hook), `SnapshotEngine`, `DirtyTracker`, `RetentionManager`, `AutoSaveScheduler` |
+| `ui`      | `VersionHistoryPanel` (bottom dockable), `ScmMenuHandler` (Tools menu), `DirtyIndicator` (toolbar status), `CheckpointDialog`, `SettingsDialog`, `AboutDialog`, `Toast`  |
 
 ### Dependency Direction (Strict)
 
@@ -90,36 +85,40 @@ No circular or upward dependencies.
 
 - **Save Hook Isolation (R3)**: Entire post-save call in `try-catch(Throwable)`. Native save must never be blocked.
 - **Atomic Writes (R4, R6)**: All file writes use temp + `Files.move(ATOMIC_MOVE)` pattern. Prevents corruption.
-- **Snapshot Deduplication (R8)**: SHA-256 checksum comparison against latest version. Skips identical saves.
+- **Snapshot Deduplication (R8)**: SHA-256 checksum comparison. Only `AUTO_CHECKPOINT` deduplicates. `CHECKPOINT` and `RESTORE` always create a version.
 - **Self-Healing (R2)**: index.json parse failure → rename to `.bak`, rebuild from `.jmxv` filenames on disk.
 - **Existence-Only Validation (R7)**: `Files.exists()` per entry — no file reads. Sub-millisecond.
 - **Version Numbers Never Reset (R9)**: Global, monotonically incrementing. Even after retention pruning.
 - **ScmContext Lifecycle (R1)**: Per-test-plan state object. Dispose previous on new open. Prevents state leaks.
 - **Concurrency**: `SwingWorker` for all storage ops. UI updates via `SwingUtilities.invokeLater`.
+- **Post-Restore Normalization**: Save + dirty tracker reset after reload to prevent redundant auto-checkpoint from re-serialization differences.
 - **All runtime deps `provided`**: JMeter core, Jackson on JMeter classpath. Thin JAR, no shading.
 - **Pure additive**: Never modifies or removes JMeter behavior. All reflection with graceful fallback.
 
 ### JMeter Integration Points (4 reflection touchpoints)
 
-| Touchpoint               | What                       | Failure                                     |
-|--------------------------|----------------------------|---------------------------------------------|
-| `ActionRouter` save hook | Wrap `ActionNames.SAVE`    | `try-catch(Throwable)`: native save works   |
-| `MainFrame` toolbar      | Append `ScmToolbarGroup`   | Toolbar absent. JMeter functional           |
-| `MainFrame` bottom panel | Access `JSplitPane`        | Fallback to content pane. JMeter functional |
-| `JMenuBar` Tools menu    | Find Tools `JMenu`, append | Menu absent. JMeter functional              |
+| Touchpoint               | What                                           | Failure                                     |
+|--------------------------|-------------------------------------------------|---------------------------------------------|
+| `ActionRouter` save hook | Wrap `ActionNames.SAVE`                         | `try-catch(Throwable)`: native save works   |
+| `MainFrame` toolbar      | Insert 5 buttons (C,H,I,L,D) + separator        | Toolbar absent. JMeter functional           |
+| `MainFrame` bottom panel | Access `JSplitPane`                              | Fallback to content pane. JMeter functional |
+| `JMenuBar` Tools menu    | Find Tools `JMenu`, append Version Control submenu | Menu absent. JMeter functional              |
 
 ### Storage Schema
 
-- **index.json**: `schemaVersion: 1`, `maxRetention`, `storageLocation`, `versions[]` array of `VersionEntry`
+- **index.json**: `schemaVersion: 1`, `maxRetention`, `storageLocation`, `versions[]` array of `VersionEntry`, `pinnedVersions` set of version numbers
 - **.lock**: JSON with `pid`, `hostname`, `timestamp`, `jmeterVersion`. Timestamp-based stale detection.
-- **Folder**: `.history/` alongside `.jmx` with `index.json`, `.lock`, `v001.jmxv`, `v002.jmxv`, ...
+- **audit.log**: JSON-lines audit trail. 1MB size limit with single `.1` backup rotation.
+- **Folder**: `.history/<jmx-stem>/` per test plan, containing `index.json`, `.lock`, `v001.jmxv`, `v002.jmxv`, ...
 
 ### Key Constraints
 
-- **index.json schema is public** — `VersionEntry` and `VersionIndex` field names are backward-compatible.
-  Field renames are breaking changes.
+- **index.json schema is public** — `VersionEntry` and `VersionIndex` field names are backward-compatible. Field renames are breaking changes.
 - **Version file naming**: `v001.jmxv` zero-padded to 3 digits.
-- **Retention pruning**: FIFO — oldest versions removed first.
-- **Delete guard**: Latest version cannot be deleted.
-- **Restore is append-only**: Auto-snapshots current state before restoring. History never destructive.
+- **Retention pruning**: FIFO — oldest unpinned versions removed first. Latest version always preserved.
+- **Freeze (pin)**: Frozen versions are exempt from retention pruning and bulk deletion. Unfreeze to allow deletion.
+- **Delete guard**: Latest version cannot be deleted. Frozen versions cannot be deleted.
+- **Selective deletion**: Checkbox selection + "Delete Versions" deletes only checked, non-frozen, non-latest versions.
+- **Restore is append-only**: Always snapshots current state (RESTORE trigger) before restoring. History never destructive.
 - **Lock**: Application-level (no `FileLock`). Configurable stale timeout. Second instance → read-only mode.
+- **Toolbar**: 5 buttons (C=Checkpoint, H=History, I=Indicator, L=Lock, D=Delete). Visibility togglable in Settings. Sized to match native JMeter toolbar buttons.
