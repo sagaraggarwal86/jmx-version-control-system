@@ -40,12 +40,12 @@ class SnapshotEngineTest {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
         VersionEntry entry = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
-                TriggerType.SAVE, null);
+                TriggerType.CHECKPOINT, null);
 
         assertNotNull(entry);
         assertEquals(1, entry.getVersion());
         assertEquals("v001.jmxv", entry.getFile());
-        assertEquals(TriggerType.SAVE, entry.getTrigger());
+        assertEquals(TriggerType.CHECKPOINT, entry.getTrigger());
         assertNull(entry.getNote());
         assertTrue(Files.exists(storageDir.resolve("v001.jmxv")));
         assertEquals(1, index.getVersions().size());
@@ -68,26 +68,41 @@ class SnapshotEngineTest {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
         VersionEntry first = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
-                TriggerType.SAVE, null);
+                TriggerType.AUTO_CHECKPOINT, null);
         assertNotNull(first);
 
-        // Same content — should skip
+        // Same content — AUTO_CHECKPOINT should skip
         VersionEntry second = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
-                TriggerType.SAVE, null);
+                TriggerType.AUTO_CHECKPOINT, null);
         assertNull(second);
         assertEquals(1, index.getVersions().size());
+    }
+
+    @Test
+    void manualCheckpointAlwaysCreatesVersion() throws IOException {
+        VersionIndex index = VersionIndex.createDefault(20, ".history");
+
+        VersionEntry first = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
+                TriggerType.CHECKPOINT, null);
+        assertNotNull(first);
+
+        // Same content — manual CHECKPOINT should still create
+        VersionEntry second = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
+                TriggerType.CHECKPOINT, null);
+        assertNotNull(second);
+        assertEquals(2, index.getVersions().size());
     }
 
     @Test
     void deduplicationAllowsDifferentContent() throws IOException {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
-        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.SAVE, null);
+        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.CHECKPOINT, null);
 
         Files.writeString(jmxFile, "<jmeterTestPlan>modified</jmeterTestPlan>");
 
         VersionEntry second = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
-                TriggerType.SAVE, null);
+                TriggerType.CHECKPOINT, null);
         assertNotNull(second);
         assertEquals(2, index.getVersions().size());
     }
@@ -96,11 +111,11 @@ class SnapshotEngineTest {
     void versionNumberIncrementsGlobally() throws IOException {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
-        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.SAVE, null);
+        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.CHECKPOINT, null);
         Files.writeString(jmxFile, "v2");
-        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.SAVE, null);
+        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.CHECKPOINT, null);
         Files.writeString(jmxFile, "v3");
-        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.SAVE, null);
+        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.CHECKPOINT, null);
 
         assertEquals(3, index.getVersions().size());
         assertEquals(1, index.getVersions().get(0).getVersion());
@@ -112,9 +127,9 @@ class SnapshotEngineTest {
     void restoreAutoSnapshotsCurrentState() throws IOException {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
-        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.SAVE, null);
+        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.CHECKPOINT, null);
         Files.writeString(jmxFile, "modified content");
-        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.SAVE, null);
+        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.CHECKPOINT, null);
 
         // Modify file again so auto-snapshot before restore isn't a dedup skip
         Files.writeString(jmxFile, "further changes");
@@ -141,9 +156,9 @@ class SnapshotEngineTest {
     void deleteVersionRemovesFileAndEntry() throws IOException {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
-        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.SAVE, null);
+        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.CHECKPOINT, null);
         Files.writeString(jmxFile, "v2");
-        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.SAVE, null);
+        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.CHECKPOINT, null);
 
         snapshotEngine.deleteVersion(storageDir, index, 1);
 
@@ -156,7 +171,7 @@ class SnapshotEngineTest {
     void deleteLatestVersionBlocked() throws IOException {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
-        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.SAVE, null);
+        snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.CHECKPOINT, null);
 
         assertThrows(IllegalStateException.class, () ->
                 snapshotEngine.deleteVersion(storageDir, index, 1));

@@ -1,15 +1,13 @@
 package io.github.sagaraggarwal86.jmeter.scm.core;
 
+import io.github.sagaraggarwal86.jmeter.scm.config.ScmConfigManager;
 import io.github.sagaraggarwal86.jmeter.scm.storage.IndexManager;
 import io.github.sagaraggarwal86.jmeter.scm.storage.LockManager;
+import io.github.sagaraggarwal86.jmeter.scm.ui.DirtyIndicator;
 import io.github.sagaraggarwal86.jmeter.scm.ui.ScmMenuHandler;
-import io.github.sagaraggarwal86.jmeter.scm.ui.ScmToolbarGroup;
 import io.github.sagaraggarwal86.jmeter.scm.ui.VersionHistoryPanel;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.MainFrame;
-import org.apache.jmeter.gui.action.ActionNames;
-import org.apache.jmeter.gui.action.ActionRouter;
-import org.apache.jmeter.gui.action.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,11 +15,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Lazy initializer for the SCM plugin. Installs toolbar, menu, and save hook once.
+ * Lazy initializer for the SCM plugin. Installs toolbar, history panel, and key bindings once.
  * Re-initializes ScmContext per test plan.
  */
 public final class ScmInitializer {
@@ -31,16 +29,27 @@ public final class ScmInitializer {
 
     private final IndexManager indexManager;
     private final LockManager lockManager;
-
+    private final List<Component> scmToolbarComponents = new ArrayList<>();
     private volatile ScmContext currentContext;
-    private ScmToolbarGroup toolbarGroup;
+    private DirtyIndicator dirtyIndicator;
     private VersionHistoryPanel historyPanel;
+    private AutoSaveScheduler autoCheckpointScheduler;
     private boolean uiInstalled;
 
     private ScmInitializer() {
         this.indexManager = new IndexManager();
         this.lockManager = new LockManager();
+        this.autoCheckpointScheduler = new AutoSaveScheduler(this);
         this.uiInstalled = false;
+
+        // Release lock on JMeter exit
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            ScmContext ctx = currentContext;
+            if (ctx != null && !ctx.isDisposed()) {
+                ctx.dispose();
+                log.debug("Lock released via shutdown hook");
+            }
+        }, "SCM-ShutdownHook"));
     }
 
     /**
@@ -53,9 +62,6 @@ public final class ScmInitializer {
         return instance;
     }
 
-    /**
-     * Finds a field of the given type in the class hierarchy.
-     */
     private static Field findField(Class<?> clazz, Class<?> fieldType) {
         Class<?> current = clazz;
         while (current != null) {
@@ -72,8 +78,6 @@ public final class ScmInitializer {
     /**
      * Initializes the SCM plugin for the given test plan file.
      * Called on test plan open/switch. Disposes previous context.
-     *
-     * @param jmxFile the test plan file path
      */
     public void initializeForTestPlan(Path jmxFile) {
         if (jmxFile == null) {
@@ -82,6 +86,8 @@ public final class ScmInitializer {
         }
 
         try {
+            autoCheckpointScheduler.stop();
+
             if (currentContext != null && !currentContext.isDisposed()) {
                 currentContext.dispose();
             }
@@ -94,6 +100,7 @@ public final class ScmInitializer {
             }
 
             notifyVersionsChanged();
+            autoCheckpointScheduler.start();
 
             if (currentContext.isReadOnly()) {
                 SwingUtilities.invokeLater(() ->
@@ -111,16 +118,10 @@ public final class ScmInitializer {
         }
     }
 
-    /**
-     * Returns the current ScmContext, or null if none active.
-     */
     public ScmContext getCurrentContext() {
         return currentContext;
     }
 
-    /**
-     * Notifies UI components that versions have changed.
-     */
     public void notifyVersionsChanged() {
         SwingUtilities.invokeLater(() -> {
             ScmContext ctx = currentContext;
@@ -128,28 +129,74 @@ public final class ScmInitializer {
                 if (historyPanel != null) {
                     historyPanel.refresh(ctx);
                 }
-                if (toolbarGroup != null) {
-                    toolbarGroup.refresh(ctx);
+                if (dirtyIndicator != null) {
+                    dirtyIndicator.refresh(ctx);
                 }
             }
         });
     }
 
     /**
-     * Returns the version history panel (may be null before UI install).
+     * Restarts the auto-checkpoint scheduler with current config.
      */
+    public void restartAutoCheckpoint() {
+        autoCheckpointScheduler.start();
+    }
+
+    /**
+     * Disposes the current context and releases the lock. Called on File > Close.
+     */
+    public void disposeCurrentContext() {
+        autoCheckpointScheduler.stop();
+        if (currentContext != null && !currentContext.isDisposed()) {
+            currentContext.dispose();
+            currentContext = null;
+            notifyVersionsChanged();
+            log.info("SCM context disposed (file closed)");
+        }
+    }
+
     public VersionHistoryPanel getHistoryPanel() {
         return historyPanel;
     }
 
     /**
-     * Installs toolbar group, menu, and save hook. Called once.
+     * Ensures the plugin UI is installed. Idempotent.
+     */
+    public void ensureInitialized() {
+        if (uiInstalled) return;
+        log.info("SCM Plugin bootstrapping");
+        ScmConfigManager.ensureDefaultsPersisted();
+        installUi();
+    }
+
+    /**
+     * Ensures UI is installed and context is initialized for the current test plan.
+     */
+    public void ensureInitializedWithContext() {
+        ensureInitialized();
+        try {
+            String testPlanFile = GuiPackage.getInstance().getTestPlanFile();
+            if (testPlanFile != null) {
+                Path jmxPath = Path.of(testPlanFile);
+                ScmContext ctx = currentContext;
+                if (ctx == null || ctx.isDisposed() || !ctx.getJmxFile().equals(jmxPath)) {
+                    initializeForTestPlan(jmxPath);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Could not initialize context: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Installs toolbar, history panel, and key bindings. Called once.
      */
     private void installUi() {
         try {
             installToolbar();
         } catch (Exception e) {
-            log.warn("Could not install toolbar group: {}", e.getMessage());
+            log.warn("Could not install toolbar: {}", e.getMessage());
         }
 
         try {
@@ -159,24 +206,55 @@ public final class ScmInitializer {
         }
 
         try {
-            ScmMenuHandler.install(this);
+            installKeyBindings();
         } catch (Exception e) {
-            log.warn("Could not install Tools menu: {}", e.getMessage());
-        }
-
-        try {
-            installSaveHook();
-        } catch (Exception e) {
-            log.warn("Could not install save hook: {}", e.getMessage());
+            log.warn("Could not install key bindings: {}", e.getMessage());
         }
 
         uiInstalled = true;
         log.info("SCM Plugin UI installed");
     }
 
+    private void installKeyBindings() {
+        MainFrame mainFrame = getMainFrame();
+        if (mainFrame == null) return;
+
+        JRootPane rootPane = mainFrame.getRootPane();
+        InputMap inputMap = rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap actionMap = rootPane.getActionMap();
+
+        inputMap.put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_H,
+                java.awt.event.InputEvent.CTRL_DOWN_MASK), "scm.openHistory");
+        actionMap.put("scm.openHistory", new javax.swing.AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                if (historyPanel != null) {
+                    historyPanel.toggleVisibility();
+                }
+            }
+        });
+
+        inputMap.put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_K,
+                java.awt.event.InputEvent.CTRL_DOWN_MASK), "scm.createCheckpoint");
+        actionMap.put("scm.createCheckpoint", new javax.swing.AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                ScmMenuHandler.triggerCheckpoint(ScmInitializer.this);
+            }
+        });
+
+        log.debug("Key bindings installed (Ctrl+H, Ctrl+K)");
+    }
+
     /**
-     * Installs the toolbar group via MainFrame reflection.
+     * Sets visibility of all SCM toolbar components (buttons + indicator).
      */
+    public void setToolbarVisible(boolean visible) {
+        for (Component c : scmToolbarComponents) {
+            c.setVisible(visible);
+        }
+    }
+
     private void installToolbar() throws Exception {
         MainFrame mainFrame = getMainFrame();
         if (mainFrame == null) {
@@ -184,41 +262,109 @@ public final class ScmInitializer {
             return;
         }
 
-        // MainFrame doesn't expose getToolBar() publicly — use reflection
         Field toolbarField = findField(mainFrame.getClass(), JToolBar.class);
         if (toolbarField == null) {
-            log.warn("Toolbar field not found via reflection — toolbar group not installed");
+            log.warn("Toolbar field not found — toolbar not installed");
             return;
         }
         toolbarField.setAccessible(true);
         JToolBar toolbar = (JToolBar) toolbarField.get(mainFrame);
         if (toolbar == null) {
-            log.warn("Toolbar is null — toolbar group not installed");
+            log.warn("Toolbar is null — toolbar not installed");
             return;
         }
 
-        toolbarGroup = new ScmToolbarGroup(this);
-        toolbar.addSeparator();
-        toolbar.add(toolbarGroup);
+        // Find insertion point: before "Function Helper Dialog" button
+        int insertIndex = toolbar.getComponentCount();
+        for (int i = 0; i < toolbar.getComponentCount(); i++) {
+            Component comp = toolbar.getComponent(i);
+            if (comp instanceof JButton btn) {
+                String tooltip = btn.getToolTipText();
+                if (tooltip != null && tooltip.toLowerCase().contains("function helper")) {
+                    insertIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // Measure reference button size from existing toolbar (e.g., help icon)
+        Dimension refSize = null;
+        for (int i = 0; i < toolbar.getComponentCount(); i++) {
+            Component comp = toolbar.getComponent(i);
+            if (comp instanceof JButton btn && btn.getIcon() != null) {
+                refSize = btn.getPreferredSize();
+                break;
+            }
+        }
+
+        // Separator before SCM buttons
+        JToolBar.Separator separator = new JToolBar.Separator();
+        toolbar.add(separator, insertIndex++);
+        scmToolbarComponents.add(separator);
+
+        // Order: C, H, I, L, D
+        JButton checkpointBtn = createToolbarButton("C", "Save Checkpoint (Ctrl+K)",
+                () -> ScmMenuHandler.triggerCheckpoint(this));
+        toolbar.add(checkpointBtn, insertIndex++);
+        scmToolbarComponents.add(checkpointBtn);
+
+        JButton historyBtn = createToolbarButton("H", "Show History (Ctrl+H)",
+                () -> ScmMenuHandler.triggerShowHistory(this));
+        toolbar.add(historyBtn, insertIndex++);
+        scmToolbarComponents.add(historyBtn);
+
+        dirtyIndicator = new DirtyIndicator();
+        toolbar.add(dirtyIndicator, insertIndex++);
+        scmToolbarComponents.add(dirtyIndicator);
+
+        JButton breakLockBtn = createToolbarButton("L", "Break Lock",
+                () -> ScmMenuHandler.triggerBreakLock(this));
+        toolbar.add(breakLockBtn, insertIndex++);
+        scmToolbarComponents.add(breakLockBtn);
+
+        JButton deleteBtn = createToolbarButton("D", "Delete Versions",
+                () -> ScmMenuHandler.triggerDeleteVersions(this));
+        toolbar.add(deleteBtn, insertIndex);
+        scmToolbarComponents.add(deleteBtn);
+
+        // Match all SCM buttons to the reference toolbar button size
+        if (refSize != null) {
+            for (Component c : scmToolbarComponents) {
+                if (c instanceof JButton btn) {
+                    btn.setPreferredSize(refSize);
+                    btn.setMinimumSize(refSize);
+                    btn.setMaximumSize(refSize);
+                }
+            }
+        }
+
+        setToolbarVisible(ScmConfigManager.isToolbarVisible());
+
         toolbar.revalidate();
         toolbar.repaint();
-        log.debug("Toolbar group installed");
+        log.debug("Toolbar buttons and indicator installed");
     }
 
-    /**
-     * Installs the bottom history panel via MainFrame JSplitPane reflection.
-     */
+    private JButton createToolbarButton(String label, String tooltip, Runnable action) {
+        JButton button = new JButton(label);
+        button.setToolTipText(tooltip);
+        button.setFocusable(false);
+        button.setFont(button.getFont().deriveFont(Font.BOLD, 13f));
+        button.setMargin(new Insets(2, 4, 2, 4));
+        button.addActionListener(evt -> action.run());
+        return button;
+    }
+
     private void installBottomPanel() throws Exception {
         historyPanel = new VersionHistoryPanel(this);
-        historyPanel.setVisible(false); // Hidden by default
+        historyPanel.setVisible(false);
 
         MainFrame mainFrame = getMainFrame();
         if (mainFrame == null) {
-            log.warn("MainFrame not available — using floating dialog fallback");
+            log.warn("MainFrame not available — panel not installed");
             return;
         }
 
-        // Try to find the main JSplitPane via reflection
         try {
             Field splitField = findField(mainFrame.getClass(), JSplitPane.class);
             if (splitField != null) {
@@ -226,12 +372,12 @@ public final class ScmInitializer {
                 JSplitPane splitPane = (JSplitPane) splitField.get(mainFrame);
                 if (splitPane != null) {
                     Component bottomComponent = splitPane.getBottomComponent();
-
-                    // Wrap existing bottom + history panel in a new split
                     JSplitPane bottomSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
                             bottomComponent, historyPanel);
-                    bottomSplit.setResizeWeight(0.7);
+                    bottomSplit.setResizeWeight(1.0);
                     bottomSplit.setOneTouchExpandable(true);
+                    bottomSplit.setContinuousLayout(true);
+                    bottomSplit.setDividerSize(6);
                     splitPane.setBottomComponent(bottomSplit);
                     splitPane.revalidate();
                     log.debug("Bottom panel installed in JSplitPane");
@@ -242,35 +388,9 @@ public final class ScmInitializer {
             log.debug("JSplitPane reflection failed: {}", e.getMessage());
         }
 
-        // Fallback: add to mainframe's content pane bottom
         mainFrame.getContentPane().add(historyPanel, BorderLayout.SOUTH);
         mainFrame.revalidate();
         log.debug("Bottom panel installed via fallback");
-    }
-
-    /**
-     * Installs the save command wrapper via ActionRouter reflection.
-     */
-    @SuppressWarnings("unchecked")
-    private void installSaveHook() throws Exception {
-        ActionRouter router = ActionRouter.getInstance();
-
-        // Access the commands map via reflection
-        Field commandsField = ActionRouter.class.getDeclaredField("commands");
-        commandsField.setAccessible(true);
-        Map<String, Set<Command>> commands = (Map<String, Set<Command>>) commandsField.get(router);
-
-        Set<Command> saveCommands = commands.get(ActionNames.SAVE);
-        if (saveCommands != null && !saveCommands.isEmpty()) {
-            Command originalCommand = saveCommands.iterator().next();
-            SaveCommandWrapper wrapper = new SaveCommandWrapper(originalCommand, this);
-
-            saveCommands.clear();
-            saveCommands.add(wrapper);
-            log.debug("Save hook installed");
-        } else {
-            log.warn("No SAVE command found to wrap");
-        }
     }
 
     private MainFrame getMainFrame() {

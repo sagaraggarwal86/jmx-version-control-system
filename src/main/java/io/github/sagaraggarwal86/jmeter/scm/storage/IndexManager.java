@@ -105,6 +105,7 @@ public final class IndexManager {
      */
     public void removeVersion(Path storageDir, VersionIndex index, int versionNumber) throws IOException {
         index.getVersions().removeIf(e -> e.getVersion() == versionNumber);
+        index.unpin(versionNumber);
         save(storageDir, index);
     }
 
@@ -167,7 +168,7 @@ public final class IndexManager {
                         checksum = "unknown";
                     }
                     entries.add(new VersionEntry(version, fileName, timestamp,
-                            TriggerType.SAVE, "[recovered]", checksum));
+                            TriggerType.CHECKPOINT, "[recovered]", checksum));
                 }
             }
             entries.sort(java.util.Comparator.comparingInt(VersionEntry::getVersion));

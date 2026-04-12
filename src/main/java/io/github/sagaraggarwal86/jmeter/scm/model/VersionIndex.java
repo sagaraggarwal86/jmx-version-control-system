@@ -3,9 +3,7 @@ package io.github.sagaraggarwal86.jmeter.scm.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Root object for index.json — contains schema version, settings, and version history.
@@ -14,6 +12,7 @@ public final class VersionIndex {
 
     private final int schemaVersion;
     private final List<VersionEntry> versions;
+    private final Set<Integer> pinnedVersions;
     private int maxRetention;
     private String storageLocation;
 
@@ -22,18 +21,20 @@ public final class VersionIndex {
             @JsonProperty("schemaVersion") int schemaVersion,
             @JsonProperty("maxRetention") int maxRetention,
             @JsonProperty("storageLocation") String storageLocation,
-            @JsonProperty("versions") List<VersionEntry> versions) {
+            @JsonProperty("versions") List<VersionEntry> versions,
+            @JsonProperty("pinnedVersions") Set<Integer> pinnedVersions) {
         this.schemaVersion = schemaVersion;
         this.maxRetention = maxRetention;
         this.storageLocation = Objects.requireNonNull(storageLocation, "storageLocation must not be null");
         this.versions = versions != null ? new ArrayList<>(versions) : new ArrayList<>();
+        this.pinnedVersions = pinnedVersions != null ? new HashSet<>(pinnedVersions) : new HashSet<>();
     }
 
     /**
      * Creates a new default index.
      */
     public static VersionIndex createDefault(int maxRetention, String storageLocation) {
-        return new VersionIndex(1, maxRetention, storageLocation, new ArrayList<>());
+        return new VersionIndex(1, maxRetention, storageLocation, new ArrayList<>(), new HashSet<>());
     }
 
     @JsonProperty("schemaVersion")
@@ -62,6 +63,23 @@ public final class VersionIndex {
     @JsonProperty("versions")
     public List<VersionEntry> getVersions() {
         return versions;
+    }
+
+    @JsonProperty("pinnedVersions")
+    public Set<Integer> getPinnedVersions() {
+        return pinnedVersions;
+    }
+
+    public boolean isPinned(int versionNumber) {
+        return pinnedVersions.contains(versionNumber);
+    }
+
+    public void pin(int versionNumber) {
+        pinnedVersions.add(versionNumber);
+    }
+
+    public void unpin(int versionNumber) {
+        pinnedVersions.remove(versionNumber);
     }
 
     /**

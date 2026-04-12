@@ -5,11 +5,16 @@ package io.github.sagaraggarwal86.jmeter.scm.model;
  */
 public enum TriggerType {
     /**
-     * Auto-created on Ctrl+S save.
+     * Manually created by user (Ctrl+K).
      */
-    SAVE,
+    CHECKPOINT,
     /**
-     * Manually created by user.
+     * Periodically created by the auto-checkpoint scheduler.
+     * Saves the script to disk first, then creates a version.
      */
-    CHECKPOINT
+    AUTO_CHECKPOINT,
+    /**
+     * Auto-created backup of current state before a restore operation.
+     */
+    RESTORE
 }

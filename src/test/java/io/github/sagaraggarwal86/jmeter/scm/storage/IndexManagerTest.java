@@ -40,7 +40,7 @@ class IndexManagerTest {
     void saveAndLoadRoundTrip() throws IOException {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
         index.getVersions().add(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
-                TriggerType.SAVE, "test note", "abc123"));
+                TriggerType.CHECKPOINT, "test note", "abc123"));
 
         indexManager.save(tempDir, index);
 
@@ -51,7 +51,7 @@ class IndexManagerTest {
         assertEquals(1, loaded.getVersions().size());
         assertEquals("v001.jmxv", loaded.getVersions().get(0).getFile());
         assertEquals("test note", loaded.getVersions().get(0).getNote());
-        assertEquals(TriggerType.SAVE, loaded.getVersions().get(0).getTrigger());
+        assertEquals(TriggerType.CHECKPOINT, loaded.getVersions().get(0).getTrigger());
     }
 
     @Test
@@ -76,9 +76,9 @@ class IndexManagerTest {
     void removeVersionDeletesEntryAndSaves() throws IOException {
         VersionIndex index = indexManager.load(tempDir);
         index.getVersions().add(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
-                TriggerType.SAVE, null, "a"));
+                TriggerType.CHECKPOINT, null, "a"));
         index.getVersions().add(new VersionEntry(2, "v002.jmxv", LocalDateTime.now(),
-                TriggerType.SAVE, null, "b"));
+                TriggerType.CHECKPOINT, null, "b"));
         indexManager.save(tempDir, index);
 
         indexManager.removeVersion(tempDir, index, 1);
@@ -92,9 +92,9 @@ class IndexManagerTest {
         // Create index with entry pointing to non-existent file
         VersionIndex index = VersionIndex.createDefault(20, ".history");
         index.getVersions().add(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
-                TriggerType.SAVE, null, "abc"));
+                TriggerType.CHECKPOINT, null, "abc"));
         index.getVersions().add(new VersionEntry(2, "v002.jmxv", LocalDateTime.now(),
-                TriggerType.SAVE, null, "def"));
+                TriggerType.CHECKPOINT, null, "def"));
         indexManager.save(tempDir, index);
 
         // Only create v002, not v001

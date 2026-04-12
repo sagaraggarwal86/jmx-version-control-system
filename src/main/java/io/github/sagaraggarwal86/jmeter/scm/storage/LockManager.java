@@ -34,7 +34,7 @@ public final class LockManager {
         try {
             Files.createDirectories(storageDir);
 
-            LockInfo existing = readLock(storageDir.resolve(LOCK_FILE));
+            LockInfo existing = getLockInfo(storageDir);
             if (existing != null) {
                 if (isCurrentProcess(existing)) {
                     writeLock(storageDir, createCurrentLockInfo());
@@ -78,6 +78,28 @@ public final class LockManager {
             }
         } catch (IOException e) {
             log.warn("Failed to release lock in {}: {}", storageDir, e.getMessage());
+        }
+    }
+
+    /**
+     * Force-releases the lock regardless of ownership. Deletes the lock file
+     * and re-acquires for the current process.
+     *
+     * @param storageDir the storage directory
+     * @return true if lock was force-released and re-acquired
+     */
+    public boolean forceRelease(Path storageDir) {
+        Objects.requireNonNull(storageDir, "storageDir must not be null");
+
+        Path lockFile = storageDir.resolve(LOCK_FILE);
+        try {
+            Files.deleteIfExists(lockFile);
+            log.info("Lock force-released in {}", storageDir);
+            writeLock(storageDir, createCurrentLockInfo());
+            return true;
+        } catch (IOException e) {
+            log.error("Failed to force-release lock in {}: {}", storageDir, e.getMessage());
+            return false;
         }
     }
 

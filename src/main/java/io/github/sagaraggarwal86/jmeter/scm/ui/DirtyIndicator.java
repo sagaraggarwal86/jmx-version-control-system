@@ -1,50 +1,46 @@
 package io.github.sagaraggarwal86.jmeter.scm.ui;
 
+import io.github.sagaraggarwal86.jmeter.scm.core.ScmContext;
+
 import javax.swing.*;
 import java.awt.*;
 
 /**
- * Amber dot overlay painted on the save button when unsaved changes exist.
+ * Toolbar indicator button: shows "I" with colored foreground.
+ * Green (clean), amber (dirty/modified), red (read-only/locked).
  */
-public final class DirtyIndicator extends JComponent {
+public final class DirtyIndicator extends JButton {
 
-    private static final int DOT_SIZE = 8;
+    private static final Color GREEN = new Color(40, 167, 69);
     private static final Color AMBER = new Color(255, 191, 0);
-    private static final Color AMBER_BORDER = new Color(204, 153, 0);
-
-    private boolean dirty;
+    private static final Color RED = new Color(220, 53, 69);
 
     public DirtyIndicator() {
-        this.dirty = false;
-        setOpaque(false);
-        setPreferredSize(new Dimension(DOT_SIZE + 2, DOT_SIZE + 2));
-    }
-
-    public boolean isDirty() {
-        return dirty;
+        super("I");
+        setFocusable(false);
+        setFont(getFont().deriveFont(Font.BOLD, 13f));
+        setMargin(new Insets(2, 4, 2, 4));
+        setForeground(GREEN);
+        setToolTipText("Version Control: Clean");
+        addActionListener(e -> Toast.show("I'm the status light. I don't do tricks."));
     }
 
     /**
-     * Sets the dirty state and repaints.
+     * Updates the indicator color and tooltip from the current ScmContext.
      */
-    public void setDirty(boolean dirty) {
-        if (this.dirty != dirty) {
-            this.dirty = dirty;
-            repaint();
+    public void refresh(ScmContext context) {
+        if (context == null || context.isDisposed()) {
+            setForeground(GREEN);
+            setToolTipText("Version Control: No active context");
+        } else if (context.isReadOnly()) {
+            setForeground(RED);
+            setToolTipText("Version Control: Read-only (locked by another instance)");
+        } else if (context.getDirtyTracker().isDirty()) {
+            setForeground(AMBER);
+            setToolTipText("Version Control: Modified since last snapshot");
+        } else {
+            setForeground(GREEN);
+            setToolTipText("Version Control: Clean");
         }
-    }
-
-    @Override
-    protected void paintComponent(Graphics g) {
-        if (!dirty) {
-            return;
-        }
-        Graphics2D g2 = (Graphics2D) g.create();
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setColor(AMBER);
-        g2.fillOval(1, 1, DOT_SIZE, DOT_SIZE);
-        g2.setColor(AMBER_BORDER);
-        g2.drawOval(1, 1, DOT_SIZE, DOT_SIZE);
-        g2.dispose();
     }
 }
