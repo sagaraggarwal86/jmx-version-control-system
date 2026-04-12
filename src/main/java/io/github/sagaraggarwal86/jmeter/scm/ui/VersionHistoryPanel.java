@@ -112,6 +112,16 @@ public final class VersionHistoryPanel extends JPanel {
                 }
                 return c;
             }
+
+            @Override
+            public String getToolTipText(java.awt.event.MouseEvent e) {
+                int row = rowAtPoint(e.getPoint());
+                int col = columnAtPoint(e.getPoint());
+                if (row >= 0 && col == 5 && tableModel.isFileMissing(row)) {
+                    return "Snapshot file missing from disk — restore and export unavailable";
+                }
+                return super.getToolTipText(e);
+            }
         };
         table.setRowHeight(28);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -221,6 +231,17 @@ public final class VersionHistoryPanel extends JPanel {
         java.util.Collections.reverse(entries);
         tableModel.setLatestVersion(index.getLatestVersion());
         tableModel.setPinnedVersions(index.getPinnedVersions());
+
+        // Detect orphaned index entries (missing .jmxv files)
+        Set<Integer> missing = new HashSet<>();
+        Path storageDir = context.getStorageDir();
+        for (VersionEntry entry : entries) {
+            if (!java.nio.file.Files.exists(storageDir.resolve(entry.getFile()))) {
+                missing.add(entry.getVersion());
+            }
+        }
+        tableModel.setMissingFiles(missing);
+
         tableModel.setEntries(entries);
 
         versionCountLabel.setText(index.getVersions().size() + " versions");
@@ -345,9 +366,10 @@ public final class VersionHistoryPanel extends JPanel {
                     initializer.notifyVersionsChanged();
                     Toast.show("Deleted " + deleted + " version(s)");
                 } catch (Exception e) {
-                    log.error("Delete selected versions failed: {}", e.getMessage(), e);
+                    Throwable cause = e.getCause() != null ? e.getCause() : e;
+                    log.error("Delete selected versions failed: {}", cause.getMessage(), e);
                     JOptionPane.showMessageDialog(VersionHistoryPanel.this,
-                            "Delete failed: " + e.getMessage(),
+                            "Delete failed: " + cause.getMessage(),
                             "SCM Plugin", JOptionPane.ERROR_MESSAGE);
                 }
             }
@@ -392,9 +414,10 @@ public final class VersionHistoryPanel extends JPanel {
                     initializer.notifyVersionsChanged();
                     reloadTestPlan(jmxFile);
                 } catch (Exception e) {
-                    log.error("Restore failed: {}", e.getMessage(), e);
+                    Throwable cause = e.getCause() != null ? e.getCause() : e;
+                    log.warn("Restore failed: {}", cause.getMessage());
                     JOptionPane.showMessageDialog(VersionHistoryPanel.this,
-                            "Restore failed: " + e.getMessage(),
+                            "Restore failed: " + cause.getMessage(),
                             "SCM Plugin", JOptionPane.ERROR_MESSAGE);
                 }
             }
@@ -488,9 +511,10 @@ public final class VersionHistoryPanel extends JPanel {
                             destination.getFileName().toString());
                     Toast.show("Exported v" + entry.getVersion() + " to " + destination.getFileName());
                 } catch (Exception e) {
-                    log.error("Export failed: {}", e.getMessage(), e);
+                    Throwable cause = e.getCause() != null ? e.getCause() : e;
+                    log.warn("Export failed: {}", cause.getMessage());
                     JOptionPane.showMessageDialog(VersionHistoryPanel.this,
-                            "Export failed: " + e.getMessage(),
+                            "Export failed: " + cause.getMessage(),
                             "SCM Plugin", JOptionPane.ERROR_MESSAGE);
                 }
             }
@@ -548,6 +572,7 @@ public final class VersionHistoryPanel extends JPanel {
 
         private static final String[] COLUMNS = {"", "#", "Trigger", "Timestamp", "Note", "Actions"};
         private JTable ownerTable;
+        private Set<Integer> missingFiles = new HashSet<>();
         private List<VersionEntry> entries = new ArrayList<>();
         private Set<Integer> pinnedVersions = new HashSet<>();
         private final Set<Integer> selectedVersions = new HashSet<>();
@@ -575,6 +600,14 @@ public final class VersionHistoryPanel extends JPanel {
 
         public void setPinnedVersions(Set<Integer> pinnedVersions) {
             this.pinnedVersions = pinnedVersions != null ? pinnedVersions : new HashSet<>();
+        }
+
+        public void setMissingFiles(Set<Integer> missingFiles) {
+            this.missingFiles = missingFiles != null ? missingFiles : new HashSet<>();
+        }
+
+        public boolean isFileMissing(int row) {
+            return missingFiles.contains(entries.get(row).getVersion());
         }
 
         public void setNoteEditHandler(BiConsumer<Integer, String> handler) {
@@ -850,10 +883,11 @@ public final class VersionHistoryPanel extends JPanel {
             boolean isLatest = tableModel.isLatest(row);
             VersionEntry entry = tableModel.getEntryAt(row);
             boolean isPinned = tableModel.pinnedVersions.contains(entry.getVersion());
+            boolean fileMissing = tableModel.isFileMissing(row);
 
-            restoreBtn.setEnabled(!isLatest);
+            restoreBtn.setEnabled(!isLatest && !fileMissing);
             freezeBtn.setEnabled(!isLatest);
-            exportBtn.setEnabled(true);
+            exportBtn.setEnabled(!fileMissing);
             styleFreezeButton(freezeBtn, isPinned, boldFont);
 
             actionPanel.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
@@ -900,10 +934,11 @@ public final class VersionHistoryPanel extends JPanel {
             boolean isLatest = tableModel.isLatest(row);
             VersionEntry entry = tableModel.getEntryAt(row);
             boolean isPinned = tableModel.pinnedVersions.contains(entry.getVersion());
+            boolean fileMissing = tableModel.isFileMissing(row);
 
-            restoreButton.setEnabled(!isLatest);
+            restoreButton.setEnabled(!isLatest && !fileMissing);
             freezeButton.setEnabled(!isLatest);
-            exportButton.setEnabled(true);
+            exportButton.setEnabled(!fileMissing);
             styleFreezeButton(freezeButton, isPinned, boldFont);
 
             return panel;
