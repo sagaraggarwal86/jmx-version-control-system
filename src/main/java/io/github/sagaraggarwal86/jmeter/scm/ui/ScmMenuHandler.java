@@ -193,9 +193,10 @@ public final class ScmMenuHandler {
                     initializer.notifyVersionsChanged();
                     Toast.show("Checkpoint created");
                 } catch (Exception ex) {
-                    log.error("Checkpoint failed: {}", ex.getMessage(), ex);
+                    Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+                    log.error("Checkpoint failed: {}", cause.getMessage(), ex);
                     JOptionPane.showMessageDialog(getParentWindow(),
-                            "Checkpoint failed: " + ex.getMessage(),
+                            "Checkpoint failed: " + cause.getMessage(),
                             "SCM Plugin", JOptionPane.ERROR_MESSAGE);
                 }
             }

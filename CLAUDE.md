@@ -121,5 +121,6 @@ No circular or upward dependencies.
 - **Selective deletion**: Checkbox selection + "Delete Versions" deletes only checked, non-frozen, non-latest versions.
 - **Restore is append-only**: Always snapshots current state (RESTORE trigger) before restoring. History never destructive.
 - **Lock**: Application-level (no `FileLock`). Configurable stale timeout. Second instance → read-only mode. Write operations re-validate lock via `ensureWriteLock()` — re-acquires if deleted, switches to read-only if stolen.
-- **Missing snapshot resilience**: Restore validates `.jmxv` file exists before proceeding. Delete cleans up orphaned index entries if file is missing.
+- **Missing snapshot resilience**: `refresh()` detects missing `.jmxv` files via `Files.exists()` and disables Restore/Export buttons with tooltip. Delete cleans up orphaned index entries. Errors logged at WARN (not ERROR) since handled gracefully.
+- **Swing tooltips**: Use `JTable.getToolTipText(MouseEvent)` override, not renderer-level tooltips (renderer components don't receive mouse events).
 - **Toolbar**: 5 buttons (C=Checkpoint, H=History, I=Indicator, L=Lock, D=Delete). Visibility togglable in Settings. Sized to match native JMeter toolbar buttons.
