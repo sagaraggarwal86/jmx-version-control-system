@@ -117,8 +117,13 @@ public final class VersionHistoryPanel extends JPanel {
             public String getToolTipText(java.awt.event.MouseEvent e) {
                 int row = rowAtPoint(e.getPoint());
                 int col = columnAtPoint(e.getPoint());
-                if (row >= 0 && col == 5 && tableModel.isFileMissing(row)) {
-                    return "Snapshot file missing from disk — restore and export unavailable";
+                if (row >= 0 && col == 5) {
+                    if (tableModel.isFileMissing(row)) {
+                        return "Snapshot file missing from disk — restore and export unavailable";
+                    }
+                    if (tableModel.isLatest(row)) {
+                        return "This is the current version — restore and freeze unavailable";
+                    }
                 }
                 return super.getToolTipText(e);
             }
