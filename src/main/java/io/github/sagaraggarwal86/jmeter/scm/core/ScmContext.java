@@ -210,6 +210,7 @@ public final class ScmContext {
      */
     public VersionEntry createSnapshot(TriggerType trigger, String note) throws IOException {
         checkNotDisposed();
+        ensureWriteLock();
         VersionEntry entry = snapshotEngine.createSnapshot(
                 jmxFile, storageDir, versionIndex, trigger, note);
         if (entry != null) {
@@ -238,6 +239,7 @@ public final class ScmContext {
      */
     public void restore(int versionNumber) throws IOException {
         checkNotDisposed();
+        ensureWriteLock();
         snapshotEngine.restore(jmxFile, storageDir, versionIndex, versionNumber);
         dirtyTracker.reset();
         AuditLogger.logRestore(storageDir, versionNumber);
@@ -251,6 +253,7 @@ public final class ScmContext {
      */
     public void deleteVersion(int versionNumber) throws IOException {
         checkNotDisposed();
+        ensureWriteLock();
         snapshotEngine.deleteVersion(storageDir, versionIndex, versionNumber);
         AuditLogger.logDelete(storageDir, versionNumber);
     }
@@ -263,6 +266,7 @@ public final class ScmContext {
      */
     public int clearHistory() throws IOException {
         checkNotDisposed();
+        ensureWriteLock();
 
         VersionEntry latest = versionIndex.getLatestVersion();
         List<VersionEntry> toDelete = versionIndex.getVersions().stream()
@@ -294,6 +298,7 @@ public final class ScmContext {
      */
     public int pruneExcessVersions() throws IOException {
         checkNotDisposed();
+        ensureWriteLock();
         int before = versionIndex.getVersions().size();
         retentionManager.pruneIfNeeded(storageDir, versionIndex);
         indexManager.save(storageDir, versionIndex);
@@ -307,6 +312,24 @@ public final class ScmContext {
     private void checkNotDisposed() {
         if (disposed) {
             throw new IllegalStateException("ScmContext has been disposed");
+        }
+    }
+
+    /**
+     * Re-validates the lock before a write operation. If the lock file was deleted
+     * or stolen, attempts to re-acquire. Switches to read-only if another instance
+     * now holds it.
+     *
+     * @throws IOException if the lock cannot be re-acquired (another instance holds it)
+     */
+    private void ensureWriteLock() throws IOException {
+        if (readOnly) {
+            throw new IOException("Cannot write — read-only mode");
+        }
+        if (!lockManager.acquire(storageDir)) {
+            readOnly = true;
+            log.warn("Lock lost — another instance now holds it. Switching to read-only.");
+            throw new IOException("Lock lost to another instance. Switched to read-only mode.");
         }
     }
 }
