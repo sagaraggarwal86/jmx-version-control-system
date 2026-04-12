@@ -120,5 +120,6 @@ No circular or upward dependencies.
 - **Delete guard**: Latest version cannot be deleted. Frozen versions cannot be deleted.
 - **Selective deletion**: Checkbox selection + "Delete Versions" deletes only checked, non-frozen, non-latest versions.
 - **Restore is append-only**: Always snapshots current state (RESTORE trigger) before restoring. History never destructive.
-- **Lock**: Application-level (no `FileLock`). Configurable stale timeout. Second instance → read-only mode.
+- **Lock**: Application-level (no `FileLock`). Configurable stale timeout. Second instance → read-only mode. Write operations re-validate lock via `ensureWriteLock()` — re-acquires if deleted, switches to read-only if stolen.
+- **Missing snapshot resilience**: Restore validates `.jmxv` file exists before proceeding. Delete cleans up orphaned index entries if file is missing.
 - **Toolbar**: 5 buttons (C=Checkpoint, H=History, I=Indicator, L=Lock, D=Delete). Visibility togglable in Settings. Sized to match native JMeter toolbar buttons.

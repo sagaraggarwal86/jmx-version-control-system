@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -95,9 +96,14 @@ public final class SnapshotEngine {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Version " + versionNumber + " not found"));
 
+        Path snapshotPath = storageDir.resolve(target.getFile());
+        if (!Files.exists(snapshotPath)) {
+            throw new IOException("Snapshot file missing: " + target.getFile()
+                    + ". The version entry exists in the index but the file was deleted from disk.");
+        }
+
         createSnapshot(jmxFile, storageDir, index, TriggerType.RESTORE, "Backup before restoring to v" + versionNumber);
 
-        Path snapshotPath = storageDir.resolve(target.getFile());
         FileOperations.atomicRestore(snapshotPath, jmxFile);
 
         log.info("Restored to version {}", versionNumber);
@@ -131,7 +137,11 @@ public final class SnapshotEngine {
                 .orElseThrow(() -> new IllegalArgumentException("Version " + versionNumber + " not found"));
 
         Path snapshotFile = storageDir.resolve(target.getFile());
-        FileOperations.deleteSnapshot(snapshotFile);
+        if (Files.exists(snapshotFile)) {
+            FileOperations.deleteSnapshot(snapshotFile);
+        } else {
+            log.warn("Snapshot file already missing: {} — removing index entry only", target.getFile());
+        }
         indexManager.removeVersion(storageDir, index, versionNumber);
 
         log.info("Deleted version {}", versionNumber);
