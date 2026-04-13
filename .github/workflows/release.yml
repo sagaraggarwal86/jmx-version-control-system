@@ -25,34 +25,22 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
       - name: Set release version in POM
-        run: mvn --batch-mode versions:set -DnewVersion="${GITHUB_REF_NAME}" -DgenerateBackupPoms=false
+        run: mvn --batch-mode versions:set -DnewVersion="${GITHUB_REF_NAME#v}" -DgenerateBackupPoms=false
 
       - name: Verify before release
         run: mvn --batch-mode clean verify "-Dgpg.skip=true"
 
       - name: Publish to Maven Central
-        run: mvn --batch-mode deploy -P release
+        run: mvn --batch-mode deploy -Prelease
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
-      - name: Assemble distribution zip
-        run: |
-          VERSION="${GITHUB_REF_NAME}"
-          DIR="bpm-jmeter-plugin-${VERSION}"
-          mkdir -p "${DIR}"
-          cp target/bpm-jmeter-plugin-${VERSION}.jar "${DIR}/"
-          cp src/main/scripts/bpm-report.sh "${DIR}/"
-          chmod +x "${DIR}/bpm-report.sh"
-          cp src/main/scripts/bpm-report.bat "${DIR}/"
-          cp src/main/resources/bpm-default.properties "${DIR}/bpm.properties"
-          zip -r "bpm-jmeter-plugin-${VERSION}.zip" "${DIR}"
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: bpm-jmeter-plugin-*.zip
+          files: target/jmx-version-control-system-*.jar
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
