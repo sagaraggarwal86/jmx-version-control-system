@@ -45,18 +45,9 @@ public final class ScmConfigManager {
     }
 
     /**
-     * Returns the storage location, resolved with priority: index.json override > jmeter.properties > default.
-     */
-    public static String getStorageLocation(VersionIndex index) {
-        if (index != null && index.getStorageLocation() != null
-                && !index.getStorageLocation().isBlank()) {
-            return index.getStorageLocation();
-        }
-        return getGlobalStorageLocation();
-    }
-
-    /**
      * Returns the global storage location from jmeter.properties or the default.
+     * This is the single source of truth for storage resolution — index.json storageLocation
+     * is a record-only field and is NOT used for path resolution.
      */
     public static String getGlobalStorageLocation() {
         String prop = getProperty(PROP_STORAGE_LOCATION);

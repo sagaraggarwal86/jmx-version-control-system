@@ -133,6 +133,41 @@ class LockManagerTest {
     }
 
     @Test
+    void forceReleaseOverridesOtherProcessLock() throws Exception {
+        String otherLock = String.format("""
+                {
+                  "pid": 99999,
+                  "hostname": "OTHER-HOST",
+                  "timestamp": "%s",
+                  "jmeterVersion": "5.6.3"
+                }
+                """, LocalDateTime.now().toString());
+        Files.createDirectories(tempDir);
+        Files.writeString(tempDir.resolve(".lock"), otherLock);
+
+        // Normal acquire should fail
+        assertFalse(lockManager.acquire(tempDir));
+
+        // Force release should succeed
+        assertTrue(lockManager.forceRelease(tempDir));
+
+        // Lock should now be owned by current process
+        LockInfo info = lockManager.getLockInfo(tempDir);
+        assertNotNull(info);
+        assertEquals(ProcessHandle.current().pid(), info.getPid());
+    }
+
+    @Test
+    void forceReleaseWorksWhenNoLockExists() {
+        assertTrue(lockManager.forceRelease(tempDir));
+        assertTrue(Files.exists(tempDir.resolve(".lock")));
+
+        LockInfo info = lockManager.getLockInfo(tempDir);
+        assertNotNull(info);
+        assertEquals(ProcessHandle.current().pid(), info.getPid());
+    }
+
+    @Test
     void corruptLockFileHandledGracefully() throws Exception {
         Files.createDirectories(tempDir);
         Files.writeString(tempDir.resolve(".lock"), "not valid json}}}}");
