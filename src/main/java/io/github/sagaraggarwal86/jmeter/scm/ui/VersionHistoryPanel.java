@@ -394,7 +394,14 @@ public final class VersionHistoryPanel extends JPanel {
 
     private void performRestore(int row) {
         ScmContext context = initializer.getCurrentContext();
-        if (context == null || context.isReadOnly()) return;
+        if (context == null) return;
+        if (context.isReadOnly()) {
+            JOptionPane.showMessageDialog(this,
+                    "Cannot restore — this test plan is in read-only mode.\n" +
+                            "Another JMeter instance holds the lock.",
+                    "SCM Plugin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
         VersionEntry entry = tableModel.getEntryAt(row);
         int confirm = JOptionPane.showConfirmDialog(this,
@@ -493,8 +500,10 @@ public final class VersionHistoryPanel extends JPanel {
         if (context == null) return;
 
         VersionEntry entry = tableModel.getEntryAt(row);
+        String jmxName = context.getJmxFile().getFileName().toString().replaceFirst("\\.[^.]+$", "");
         JFileChooser chooser = new JFileChooser();
-        chooser.setSelectedFile(new java.io.File("v" + entry.getVersion() + ".jmx"));
+        chooser.setSelectedFile(new java.io.File(jmxName + "_v" + entry.getVersion() + ".jmx"));
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JMeter (.jmx)", "jmx"));
         int result = chooser.showSaveDialog(this);
         if (result != JFileChooser.APPROVE_OPTION) return;
 
@@ -586,13 +595,13 @@ public final class VersionHistoryPanel extends JPanel {
 
         public void setEntries(List<VersionEntry> entries) {
             this.entries = new ArrayList<>(entries);
-            // Retain selections for versions that still exist, remove stale + non-selectable
-            selectedVersions.retainAll(
-                    entries.stream()
-                            .map(VersionEntry::getVersion)
-                            .filter(v -> (latestVersion == null || v != latestVersion.getVersion())
-                                    && !pinnedVersions.contains(v))
-                            .collect(java.util.stream.Collectors.toSet()));
+            if (!selectedVersions.isEmpty()) {
+                selectedVersions.retainAll(
+                        entries.stream()
+                                .map(VersionEntry::getVersion)
+                                .filter(this::isSelectable)
+                                .collect(Collectors.toSet()));
+            }
             fireTableDataChanged();
             if (ownerTable != null) {
                 ownerTable.getTableHeader().repaint();
@@ -627,6 +636,11 @@ public final class VersionHistoryPanel extends JPanel {
             return latestVersion != null && entries.get(row).getVersion() == latestVersion.getVersion();
         }
 
+        private boolean isSelectable(int version) {
+            return (latestVersion == null || version != latestVersion.getVersion())
+                    && !pinnedVersions.contains(version);
+        }
+
         public Set<Integer> getSelectedVersions() {
             return new HashSet<>(selectedVersions);
         }
@@ -635,11 +649,9 @@ public final class VersionHistoryPanel extends JPanel {
             selectedVersions.clear();
             for (VersionEntry entry : entries) {
                 int version = entry.getVersion();
-                if ((latestVersion != null && version == latestVersion.getVersion())
-                        || pinnedVersions.contains(version)) {
-                    continue;
+                if (isSelectable(version)) {
+                    selectedVersions.add(version);
                 }
-                selectedVersions.add(version);
             }
             fireTableDataChanged();
         }
@@ -654,10 +666,7 @@ public final class VersionHistoryPanel extends JPanel {
             boolean hasSelectable = false;
             for (VersionEntry entry : entries) {
                 int version = entry.getVersion();
-                if ((latestVersion != null && version == latestVersion.getVersion())
-                        || pinnedVersions.contains(version)) {
-                    continue;
-                }
+                if (!isSelectable(version)) continue;
                 hasSelectable = true;
                 if (!selectedVersions.contains(version)) return false;
             }
@@ -722,8 +731,7 @@ public final class VersionHistoryPanel extends JPanel {
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             if (columnIndex == 0) {
-                return !isLatest(rowIndex)
-                        && !pinnedVersions.contains(entries.get(rowIndex).getVersion());
+                return isSelectable(entries.get(rowIndex).getVersion());
             }
             return columnIndex == 4 || columnIndex == 5;
         }
