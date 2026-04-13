@@ -21,6 +21,15 @@ public final class LockManager {
 
     private static final Logger log = LoggerFactory.getLogger(LockManager.class);
     private static final String LOCK_FILE = ".lock";
+    private static final String CURRENT_HOSTNAME = resolveHostname();
+
+    private static String resolveHostname() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (Exception e) {
+            return "unknown";
+        }
+    }
 
     /**
      * Attempts to acquire the lock for the given storage directory.
@@ -132,23 +141,18 @@ public final class LockManager {
     }
 
     private LockInfo createCurrentLockInfo() {
-        String hostname;
-        try {
-            hostname = InetAddress.getLocalHost().getHostName();
-        } catch (Exception e) {
-            hostname = "unknown";
-        }
         String jmeterVersion;
         try {
             jmeterVersion = org.apache.jmeter.util.JMeterUtils.getJMeterVersion();
         } catch (Exception e) {
             jmeterVersion = "unknown";
         }
-        return new LockInfo(ProcessHandle.current().pid(), hostname, LocalDateTime.now(), jmeterVersion);
+        return new LockInfo(ProcessHandle.current().pid(), CURRENT_HOSTNAME, LocalDateTime.now(), jmeterVersion);
     }
 
     private boolean isCurrentProcess(LockInfo lockInfo) {
-        return lockInfo.getPid() == ProcessHandle.current().pid();
+        return lockInfo.getPid() == ProcessHandle.current().pid()
+                && CURRENT_HOSTNAME.equals(lockInfo.getHostname());
     }
 
     private boolean isStale(LockInfo lockInfo) {

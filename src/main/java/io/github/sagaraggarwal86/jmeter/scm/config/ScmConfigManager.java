@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Hybrid configuration: global defaults from jmeter.properties + per-plan overrides from index.json.
@@ -101,9 +102,8 @@ public final class ScmConfigManager {
             String escapedValue = value.replace("\\", "\\\\");
             String line = key + "=" + escapedValue;
 
-            if (content.contains(key + "=")) {
-                // Replace existing line (quoteReplacement prevents \ being treated as regex escape)
-                content = content.replaceAll("(?m)^" + key.replace(".", "\\.") + "=.*$",
+            if (hasProperty(content, key)) {
+                content = content.replaceAll("(?m)^" + Pattern.quote(key) + "=.*$",
                         java.util.regex.Matcher.quoteReplacement(line));
             } else {
                 // Append with SCM header if this is the first scm property
@@ -141,7 +141,7 @@ public final class ScmConfigManager {
 
             StringBuilder toAppend = new StringBuilder();
             for (var entry : defaults.entrySet()) {
-                if (!content.contains(entry.getKey() + "=")) {
+                if (!hasProperty(content, entry.getKey())) {
                     toAppend.append(entry.getKey()).append("=").append(entry.getValue()).append("\n");
                 }
             }
@@ -209,6 +209,10 @@ public final class ScmConfigManager {
             return Boolean.parseBoolean(prop.trim());
         }
         return defaultValue;
+    }
+
+    private static boolean hasProperty(String content, String key) {
+        return Pattern.compile("(?m)^" + Pattern.quote(key) + "=").matcher(content).find();
     }
 
     private static String getProperty(String key) {

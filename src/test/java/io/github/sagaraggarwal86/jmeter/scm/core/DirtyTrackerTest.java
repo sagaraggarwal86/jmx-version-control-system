@@ -42,10 +42,13 @@ class DirtyTrackerTest {
     }
 
     @Test
-    void checksumComputedOnInit() throws IOException {
+    void checksumNullBeforeResetComputedAfter() throws IOException {
         Path jmx = createJmxFile("content");
         DirtyTracker tracker = new DirtyTracker(jmx);
 
+        assertNull(tracker.getLastKnownChecksum());
+
+        tracker.reset();
         assertNotNull(tracker.getLastKnownChecksum());
         assertEquals(64, tracker.getLastKnownChecksum().length()); // SHA-256 hex
     }
@@ -54,6 +57,7 @@ class DirtyTrackerTest {
     void verifyDirtyDetectsChange() throws IOException {
         Path jmx = createJmxFile("original");
         DirtyTracker tracker = new DirtyTracker(jmx);
+        tracker.reset();
 
         Files.writeString(jmx, "modified");
         assertTrue(tracker.verifyDirty());
@@ -64,6 +68,7 @@ class DirtyTrackerTest {
     void verifyDirtyReturnsFalseForUnchanged() throws IOException {
         Path jmx = createJmxFile("content");
         DirtyTracker tracker = new DirtyTracker(jmx);
+        tracker.reset();
 
         assertFalse(tracker.verifyDirty());
     }
@@ -72,6 +77,7 @@ class DirtyTrackerTest {
     void resetUpdatesChecksum() throws IOException {
         Path jmx = createJmxFile("original");
         DirtyTracker tracker = new DirtyTracker(jmx);
+        tracker.reset();
         String original = tracker.getLastKnownChecksum();
 
         Files.writeString(jmx, "modified");

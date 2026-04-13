@@ -28,7 +28,6 @@ public final class DirtyTracker {
     public DirtyTracker(Path jmxFile) {
         this.jmxFile = Objects.requireNonNull(jmxFile, "jmxFile must not be null");
         this.dirty = false;
-        initializeChecksum();
     }
 
     /**

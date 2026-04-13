@@ -2,7 +2,6 @@ package io.github.sagaraggarwal86.jmeter.scm.core;
 
 import io.github.sagaraggarwal86.jmeter.scm.model.TriggerType;
 import io.github.sagaraggarwal86.jmeter.scm.model.VersionEntry;
-import io.github.sagaraggarwal86.jmeter.scm.model.VersionIndex;
 import io.github.sagaraggarwal86.jmeter.scm.storage.IndexManager;
 import io.github.sagaraggarwal86.jmeter.scm.storage.LockManager;
 import org.apache.jmeter.util.JMeterUtils;
@@ -17,7 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mockStatic;
 
 class ScmContextTest {
 

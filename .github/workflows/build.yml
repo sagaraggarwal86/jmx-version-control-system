@@ -27,10 +27,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: matrix.os == 'windows-latest' && matrix.java-version == '17'
         with:
-          name: bpm-jmeter-plugin
-          path: target/bpm-jmeter-plugin-*.jar
-      - uses: actions/upload-artifact@v4
-        if: matrix.os == 'ubuntu-latest' && matrix.java-version == '17'
-        with:
-          name: coverage-report
-          path: target/site/jacoco/
+          name: jmx-version-control-system
+          path: target/jmx-version-control-system-*.jar

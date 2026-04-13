@@ -88,7 +88,7 @@ class RetentionManagerTest {
 
     private void addEntries(VersionIndex index, int count) {
         for (int i = 1; i <= count; i++) {
-            index.getVersions().add(new VersionEntry(
+            index.addVersion(new VersionEntry(
                     i, String.format("v%03d.jmxv", i), LocalDateTime.now(),
                     TriggerType.CHECKPOINT, null, "checksum" + i));
         }

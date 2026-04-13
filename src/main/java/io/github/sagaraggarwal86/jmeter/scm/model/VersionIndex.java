@@ -62,12 +62,32 @@ public final class VersionIndex {
 
     @JsonProperty("versions")
     public List<VersionEntry> getVersions() {
-        return versions;
+        return Collections.unmodifiableList(versions);
+    }
+
+    public void addVersion(VersionEntry entry) {
+        versions.add(Objects.requireNonNull(entry, "entry must not be null"));
+    }
+
+    public void addAllVersions(List<VersionEntry> entries) {
+        versions.addAll(Objects.requireNonNull(entries, "entries must not be null"));
+    }
+
+    public void removeVersionAt(int index) {
+        versions.remove(index);
+    }
+
+    public void removeVersion(int versionNumber) {
+        versions.removeIf(e -> e.getVersion() == versionNumber);
+    }
+
+    public void removeVersions(List<VersionEntry> entries) {
+        versions.removeAll(entries);
     }
 
     @JsonProperty("pinnedVersions")
     public Set<Integer> getPinnedVersions() {
-        return pinnedVersions;
+        return Collections.unmodifiableSet(pinnedVersions);
     }
 
     public boolean isPinned(int versionNumber) {
