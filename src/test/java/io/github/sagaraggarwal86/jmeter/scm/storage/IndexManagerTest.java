@@ -39,7 +39,7 @@ class IndexManagerTest {
     @Test
     void saveAndLoadRoundTrip() throws IOException {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
-        index.getVersions().add(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
+        index.addVersion(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
                 TriggerType.CHECKPOINT, "test note", "abc123"));
 
         indexManager.save(tempDir, index);
@@ -75,9 +75,9 @@ class IndexManagerTest {
     @Test
     void removeVersionDeletesEntryAndSaves() throws IOException {
         VersionIndex index = indexManager.load(tempDir);
-        index.getVersions().add(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
+        index.addVersion(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
                 TriggerType.CHECKPOINT, null, "a"));
-        index.getVersions().add(new VersionEntry(2, "v002.jmxv", LocalDateTime.now(),
+        index.addVersion(new VersionEntry(2, "v002.jmxv", LocalDateTime.now(),
                 TriggerType.CHECKPOINT, null, "b"));
         indexManager.save(tempDir, index);
 
@@ -91,9 +91,9 @@ class IndexManagerTest {
     void selfHealingRemovesMissingFiles() throws IOException {
         // Create index with entry pointing to non-existent file
         VersionIndex index = VersionIndex.createDefault(20, ".history");
-        index.getVersions().add(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
+        index.addVersion(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
                 TriggerType.CHECKPOINT, null, "abc"));
-        index.getVersions().add(new VersionEntry(2, "v002.jmxv", LocalDateTime.now(),
+        index.addVersion(new VersionEntry(2, "v002.jmxv", LocalDateTime.now(),
                 TriggerType.CHECKPOINT, null, "def"));
         indexManager.save(tempDir, index);
 

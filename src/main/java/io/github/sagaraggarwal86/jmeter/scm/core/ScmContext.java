@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -35,8 +34,8 @@ public final class ScmContext {
     private final RetentionManager retentionManager;
     private final DirtyTracker dirtyTracker;
     private VersionIndex versionIndex;
-    private boolean readOnly;
-    private boolean disposed;
+    private volatile boolean readOnly;
+    private volatile boolean disposed;
 
     /**
      * Creates a new ScmContext for the given test plan file.
@@ -94,6 +93,9 @@ public final class ScmContext {
             this.readOnly = true;
             log.info("Test plan locked by another instance — read-only mode");
         }
+
+        // Compute baseline checksum (deferred from constructor to avoid blocking EDT)
+        dirtyTracker.reset();
 
         log.info("JVCS context initialized for {} ({} versions, {})",
                 jmxFile.getFileName(), versionIndex.getVersions().size(),

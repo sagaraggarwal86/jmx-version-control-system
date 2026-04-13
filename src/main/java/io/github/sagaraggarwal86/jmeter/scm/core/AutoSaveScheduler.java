@@ -24,6 +24,7 @@ public final class AutoSaveScheduler {
     private final ScmInitializer initializer;
     private final AtomicBoolean running = new AtomicBoolean(false);
     private Timer timer;
+    private volatile SwingWorker<VersionEntry, Void> activeWorker;
 
     public AutoSaveScheduler(ScmInitializer initializer) {
         this.initializer = initializer;
@@ -48,8 +49,13 @@ public final class AutoSaveScheduler {
         if (timer != null) {
             timer.stop();
             timer = null;
-            log.debug("Auto-checkpoint stopped");
         }
+        SwingWorker<VersionEntry, Void> worker = activeWorker;
+        if (worker != null) {
+            worker.cancel(true);
+            activeWorker = null;
+        }
+        log.debug("Auto-checkpoint stopped");
     }
 
     private void performAutoCheckpoint() {
@@ -82,6 +88,7 @@ public final class AutoSaveScheduler {
         SwingWorker<VersionEntry, Void> worker = new SwingWorker<>() {
             @Override
             protected VersionEntry doInBackground() throws Exception {
+                if (isCancelled()) return null;
                 ScmContext current = initializer.getCurrentContext();
                 if (current == null || current.isDisposed() || current.isReadOnly()) {
                     return null;
@@ -91,12 +98,14 @@ public final class AutoSaveScheduler {
                     log.debug("Auto-checkpoint skipped — file unchanged");
                     return null;
                 }
+                if (isCancelled()) return null;
                 return current.createSnapshot(TriggerType.AUTO_CHECKPOINT, null);
             }
 
             @Override
             protected void done() {
                 try {
+                    if (isCancelled()) return;
                     VersionEntry entry = get();
                     if (entry != null) {
                         initializer.notifyVersionsChanged();
@@ -106,10 +115,12 @@ public final class AutoSaveScheduler {
                 } catch (Exception e) {
                     log.warn("Auto-checkpoint failed: {}", e.getMessage());
                 } finally {
+                    activeWorker = null;
                     running.set(false);
                 }
             }
         };
+        activeWorker = worker;
         worker.execute();
     }
 }

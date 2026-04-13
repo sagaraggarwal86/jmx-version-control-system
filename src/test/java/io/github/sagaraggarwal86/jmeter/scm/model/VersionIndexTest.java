@@ -34,9 +34,9 @@ class VersionIndexTest {
     @Test
     void getNextVersionNumberReturnsMaxPlusOne() {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
-        index.getVersions().add(createEntry(3));
-        index.getVersions().add(createEntry(7));
-        index.getVersions().add(createEntry(5));
+        index.addVersion(createEntry(3));
+        index.addVersion(createEntry(7));
+        index.addVersion(createEntry(5));
 
         assertEquals(8, index.getNextVersionNumber());
     }
@@ -44,9 +44,9 @@ class VersionIndexTest {
     @Test
     void getLatestVersionReturnsLastInList() {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
-        index.getVersions().add(createEntry(1));
-        index.getVersions().add(createEntry(2));
-        index.getVersions().add(createEntry(3));
+        index.addVersion(createEntry(1));
+        index.addVersion(createEntry(2));
+        index.addVersion(createEntry(3));
 
         assertEquals(3, index.getLatestVersion().getVersion());
     }

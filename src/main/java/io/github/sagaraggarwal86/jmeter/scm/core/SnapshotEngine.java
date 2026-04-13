@@ -48,9 +48,10 @@ public final class SnapshotEngine {
         Objects.requireNonNull(index, "index must not be null");
         Objects.requireNonNull(trigger, "trigger must not be null");
 
+        String checksum = FileOperations.computeChecksum(jmxFile);
+
         // Synchronize on index to prevent concurrent save + auto-save races
         synchronized (index) {
-            String checksum = FileOperations.computeChecksum(jmxFile);
 
             // Dedup: skip auto-checkpoints if unchanged. CHECKPOINT and RESTORE always create.
             VersionEntry latest = index.getLatestVersion();
@@ -67,7 +68,7 @@ public final class SnapshotEngine {
 
             VersionEntry entry = new VersionEntry(
                     versionNumber, fileName, LocalDateTime.now(), trigger, note, checksum);
-            index.getVersions().add(entry);
+            index.addVersion(entry);
 
             retentionManager.pruneIfNeeded(storageDir, index);
             indexManager.save(storageDir, index);

@@ -58,8 +58,10 @@ public final class RetentionManager {
                 FileOperations.deleteSnapshot(snapshotFile);
             } catch (IOException e) {
                 log.warn("Could not delete snapshot file {}: {}", candidate.getFile(), e.getMessage());
+                i++;
+                continue;
             }
-            index.getVersions().remove(i);
+            index.removeVersionAt(i);
             log.debug("Pruned version {}: {}", candidate.getVersion(), candidate.getFile());
             pruned++;
         }

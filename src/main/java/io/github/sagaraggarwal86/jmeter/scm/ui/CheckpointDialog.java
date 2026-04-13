@@ -8,11 +8,6 @@ import java.awt.*;
  */
 public final class CheckpointDialog {
 
-    /**
-     * Result of the checkpoint dialog: note text and freeze preference.
-     */
-    public record CheckpointResult(String note, boolean freeze) {}
-
     private CheckpointDialog() {
         // utility class
     }
@@ -56,5 +51,11 @@ public final class CheckpointDialog {
             return new CheckpointResult(note.isBlank() ? null : note, freezeCheckBox.isSelected());
         }
         return null;
+    }
+
+    /**
+     * Result of the checkpoint dialog: note text and freeze preference.
+     */
+    public record CheckpointResult(String note, boolean freeze) {
     }
 }

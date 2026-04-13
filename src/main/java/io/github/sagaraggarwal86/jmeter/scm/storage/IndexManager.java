@@ -52,6 +52,10 @@ public final class IndexManager {
 
         try {
             VersionIndex index = FileOperations.objectMapper().readValue(indexFile.toFile(), VersionIndex.class);
+            if (index.getSchemaVersion() != 1) {
+                log.warn("index.json has schema version {} (expected 1) — fields may be misinterpreted",
+                        index.getSchemaVersion());
+            }
             selfHeal(storageDir, index);
             return index;
         } catch (Exception e) {
@@ -91,7 +95,7 @@ public final class IndexManager {
      */
     public void addVersion(Path storageDir, VersionIndex index, VersionEntry entry) throws IOException {
         Objects.requireNonNull(entry, "entry must not be null");
-        index.getVersions().add(entry);
+        index.addVersion(entry);
         save(storageDir, index);
     }
 
@@ -104,7 +108,7 @@ public final class IndexManager {
      * @throws IOException if the save fails
      */
     public void removeVersion(Path storageDir, VersionIndex index, int versionNumber) throws IOException {
-        index.getVersions().removeIf(e -> e.getVersion() == versionNumber);
+        index.removeVersion(versionNumber);
         index.unpin(versionNumber);
         save(storageDir, index);
     }
@@ -123,7 +127,7 @@ public final class IndexManager {
             }
         }
         if (!toRemove.isEmpty()) {
-            index.getVersions().removeAll(toRemove);
+            index.removeVersions(toRemove);
             save(storageDir, index);
             log.info("Self-healing: removed {} entries with missing files", toRemove.size());
         }
@@ -172,7 +176,7 @@ public final class IndexManager {
                 }
             }
             entries.sort(java.util.Comparator.comparingInt(VersionEntry::getVersion));
-            index.getVersions().addAll(entries);
+            index.addAllVersions(entries);
         }
 
         save(storageDir, index);
