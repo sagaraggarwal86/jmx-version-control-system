@@ -47,14 +47,21 @@
 ## Build Commands
 
 ```bash
-mvn clean verify                          # Build + tests
+mvn clean verify                          # Build + tests + JaCoCo coverage check
 mvn clean package -DskipTests             # Build only
 mvn test -Dtest=SomeTestClass             # Single test class
 mvn test -Dtest=SomeTestClass#testMethod  # Single test method
-mvn clean deploy -Prelease                # Release to Maven Central
+mvn clean deploy -Prelease                # Release to Maven Central (GPG + sources + javadoc)
 ```
 
 Requirements: JDK 17 only, Maven 3.8+.
+
+### Test Coverage
+
+- **JaCoCo enforces ≥85% line coverage** on testable code (`verify` phase)
+- **Excluded from enforcement**: `ui/**` (Swing), `ScmInitializer`, `AutoSaveScheduler`, `SaveCommandWrapper`,
+  `ScmOpenListener` — all require live JMeter runtime
+- Coverage report: `target/site/jacoco/index.html`
 
 ## Architecture
 

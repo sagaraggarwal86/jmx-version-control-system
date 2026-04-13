@@ -64,7 +64,7 @@ sessions — no Git, no SVN, no external tools.
 
 1. Download the latest JAR from
    [Maven Central](https://central.sonatype.com/artifact/io.github.sagaraggarwal86/jmx-version-control-system)
-   or the [GitHub Releases](https://github.com/sagaraggarwal86/SCM-jmeter-plugin/releases) page.
+   or the [GitHub Releases](https://github.com/sagaraggarwal86/jmx-version-control-system/releases) page.
 
 2. Copy it to your JMeter `lib/ext/` directory:
    ```
@@ -76,8 +76,8 @@ sessions — no Git, no SVN, no external tools.
 ### Build from Source
 
 ```bash
-git clone https://github.com/sagaraggarwal86/SCM-jmeter-plugin.git
-cd SCM-jmeter-plugin
+git clone https://github.com/sagaraggarwal86/jmx-version-control-system.git
+cd jmx-version-control-system
 mvn clean verify
 cp target/jmx-version-control-system-*.jar $JMETER_HOME/lib/ext/
 ```
@@ -247,7 +247,7 @@ preserved as user data. Delete them manually if no longer needed.
 ## Contributing
 
 Bug reports and pull requests are welcome via
-[GitHub Issues](https://github.com/sagaraggarwal86/SCM-jmeter-plugin/issues).
+[GitHub Issues](https://github.com/sagaraggarwal86/jmx-version-control-system/issues).
 
 Before submitting a pull request:
 
