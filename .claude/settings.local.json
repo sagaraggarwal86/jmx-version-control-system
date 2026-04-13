@@ -11,7 +11,8 @@
       "WebFetch(domain:jmeter.apache.org)",
       "WebFetch(domain:api.github.com)",
       "Bash(cmd:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(MSYS_NO_PATHCONV=1 MSYSTEM= /c/Windows/System32/cmd.exe:*)"
     ]
   }
 }

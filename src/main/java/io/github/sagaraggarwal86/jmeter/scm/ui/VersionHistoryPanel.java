@@ -52,7 +52,6 @@ public final class VersionHistoryPanel extends JPanel {
     private static final Color COLOR_UNFREEZE_RED = new Color(220, 53, 69);
 
     private final ScmInitializer initializer;
-    private Font boldFont;
     private final JLabel titleLabel;
     private final JLabel versionCountLabel;
     private final JLabel storageSizeLabel;
@@ -61,6 +60,7 @@ public final class VersionHistoryPanel extends JPanel {
     private final VersionTableModel tableModel;
     private final JTable table;
     private final JLabel periodicLegendLabel;
+    private Font boldFont;
 
     public VersionHistoryPanel(ScmInitializer initializer) {
         this.initializer = initializer;
@@ -216,6 +216,17 @@ public final class VersionHistoryPanel extends JPanel {
         if (bytes < 1024) return bytes + " B";
         if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
         return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
+    }
+
+    private static void styleFreezeButton(JButton button, boolean isPinned, Font boldFont) {
+        if (isPinned) {
+            button.setText("Unfreeze");
+            button.setForeground(COLOR_UNFREEZE_RED);
+        } else {
+            button.setText("Freeze");
+            button.setForeground(COLOR_FREEZE_GREEN);
+        }
+        button.setFont(boldFont);
     }
 
     /**
@@ -500,7 +511,7 @@ public final class VersionHistoryPanel extends JPanel {
         if (context == null) return;
 
         VersionEntry entry = tableModel.getEntryAt(row);
-        String jmxName = context.getJmxFile().getFileName().toString().replaceFirst("\\.[^.]+$", "");
+        String jmxName = FileOperations.extractStem(context.getJmxFile());
         JFileChooser chooser = new JFileChooser();
         chooser.setSelectedFile(new java.io.File(jmxName + "_v" + entry.getVersion() + ".jmx"));
         chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JMeter (.jmx)", "jmx"));
@@ -585,11 +596,11 @@ public final class VersionHistoryPanel extends JPanel {
     private static final class VersionTableModel extends AbstractTableModel {
 
         private static final String[] COLUMNS = {"", "#", "Trigger", "Timestamp", "Note", "Actions"};
+        private final Set<Integer> selectedVersions = new HashSet<>();
         private JTable ownerTable;
         private Set<Integer> missingFiles = new HashSet<>();
         private List<VersionEntry> entries = new ArrayList<>();
         private Set<Integer> pinnedVersions = new HashSet<>();
-        private final Set<Integer> selectedVersions = new HashSet<>();
         private VersionEntry latestVersion;
         private BiConsumer<Integer, String> noteEditHandler;
 
@@ -799,25 +810,6 @@ public final class VersionHistoryPanel extends JPanel {
         }
     }
 
-    private final class SelectionCheckboxRenderer implements TableCellRenderer {
-        private final JCheckBox checkBox = new JCheckBox();
-
-        SelectionCheckboxRenderer() {
-            checkBox.setHorizontalAlignment(SwingConstants.CENTER);
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean isSelected, boolean hasFocus,
-                                                       int row, int column) {
-            checkBox.setSelected(value instanceof Boolean && (Boolean) value);
-            boolean editable = tableModel.isCellEditable(row, column);
-            checkBox.setEnabled(editable);
-            checkBox.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
-            return checkBox;
-        }
-    }
-
     private static final class SelectAllHeaderRenderer implements TableCellRenderer {
         private final JCheckBox checkBox = new JCheckBox();
         private final VersionTableModel model;
@@ -835,6 +827,25 @@ public final class VersionHistoryPanel extends JPanel {
                                                        int row, int column) {
             checkBox.setSelected(model.isAllSelected());
             checkBox.setBackground(table.getTableHeader().getBackground());
+            return checkBox;
+        }
+    }
+
+    private final class SelectionCheckboxRenderer implements TableCellRenderer {
+        private final JCheckBox checkBox = new JCheckBox();
+
+        SelectionCheckboxRenderer() {
+            checkBox.setHorizontalAlignment(SwingConstants.CENTER);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus,
+                                                       int row, int column) {
+            checkBox.setSelected(value instanceof Boolean && (Boolean) value);
+            boolean editable = tableModel.isCellEditable(row, column);
+            checkBox.setEnabled(editable);
+            checkBox.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
             return checkBox;
         }
     }
@@ -860,17 +871,6 @@ public final class VersionHistoryPanel extends JPanel {
             }
             return label;
         }
-    }
-
-    private static void styleFreezeButton(JButton button, boolean isPinned, Font boldFont) {
-        if (isPinned) {
-            button.setText("Unfreeze");
-            button.setForeground(COLOR_UNFREEZE_RED);
-        } else {
-            button.setText("Freeze");
-            button.setForeground(COLOR_FREEZE_GREEN);
-        }
-        button.setFont(boldFont);
     }
 
     private final class ActionCellRenderer extends DefaultTableCellRenderer {

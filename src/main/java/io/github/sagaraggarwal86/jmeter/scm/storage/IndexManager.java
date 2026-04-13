@@ -28,7 +28,7 @@ public final class IndexManager {
     private static final String INDEX_FILE = "index.json";
     private static final String INDEX_TMP = "index.json.tmp";
     private static final String INDEX_BAK = "index.json.bak";
-    private static final Pattern JMXV_PATTERN = Pattern.compile("v(\\d+)\\.jmxv");
+    private static final Pattern JMXV_PATTERN = Pattern.compile(".+_(\\d+)\\.jmxv");
 
     /**
      * Loads the version index from the storage directory. Performs self-healing if corrupt.
@@ -146,7 +146,7 @@ public final class IndexManager {
                 ScmConfigManager.getGlobalMaxRetention(),
                 ScmConfigManager.getGlobalStorageLocation());
 
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(storageDir, "v*.jmxv")) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(storageDir, "*.jmxv")) {
             List<VersionEntry> entries = new ArrayList<>();
             for (Path file : stream) {
                 String fileName = file.getFileName().toString();

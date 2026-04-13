@@ -69,6 +69,17 @@ public final class AuditLogger {
         write(storageDir, "FORCE_RELEASE_LOCK", Map.of());
     }
 
+    public static void logStorageMigrate(Path storageDir, String oldLocation, String newLocation) {
+        write(storageDir, "STORAGE_MIGRATE", Map.of("oldLocation", oldLocation, "newLocation", newLocation));
+    }
+
+    public static void logStorageReset(Path storageDir, String oldLocation, String backupFile) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        fields.put("oldLocation", oldLocation);
+        if (backupFile != null) fields.put("backupFile", backupFile);
+        write(storageDir, "STORAGE_RESET", fields);
+    }
+
     private static void write(Path storageDir, String action, Map<String, Object> fields) {
         try {
             Files.createDirectories(storageDir);

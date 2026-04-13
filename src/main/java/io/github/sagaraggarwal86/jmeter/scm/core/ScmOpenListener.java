@@ -24,26 +24,13 @@ public final class ScmOpenListener implements Command {
 
     @Override
     public void doAction(ActionEvent e) {
-        String action = e.getActionCommand();
-
-        if (ActionNames.CLOSE.equals(action)) {
-            // File closed — dispose context and release lock
-            SwingUtilities.invokeLater(() -> {
-                try {
-                    ScmInitializer.getInstance().disposeCurrentContext();
-                } catch (Throwable t) {
-                    log.error("SCM context disposal failed: {}", t.getMessage(), t);
-                }
-            });
-            return;
-        }
-
-        // OPEN or SUB_TREE_LOADED — initialize for the new file
+        // Defer all handling — by the time invokeLater runs, JMeter's save/cancel
+        // dialog will have completed, so the test plan state is final.
         SwingUtilities.invokeLater(() -> {
             try {
                 ScmInitializer.getInstance().ensureInitializedWithContext();
             } catch (Throwable t) {
-                log.error("SCM Plugin activation failed: {}", t.getMessage(), t);
+                log.error("SCM Plugin lifecycle failed: {}", t.getMessage(), t);
             }
         });
     }
