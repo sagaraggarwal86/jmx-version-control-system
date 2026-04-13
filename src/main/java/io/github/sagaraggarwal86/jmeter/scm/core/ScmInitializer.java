@@ -104,10 +104,19 @@ public final class ScmInitializer {
             autoCheckpointScheduler.start();
 
             if (currentContext.isReadOnly()) {
+                var lockInfo = currentContext.getLockInfo();
+                String lockDetails = "";
+                if (lockInfo != null) {
+                    lockDetails = "\n\nLocked by:\n" +
+                            "  Host: " + lockInfo.getHostname() + "\n" +
+                            "  PID: " + lockInfo.getPid() + "\n" +
+                            "  Since: " + lockInfo.getTimestamp();
+                }
+                String msg = "This test plan is locked by another JMeter instance.\n" +
+                        "You can view and export versions but cannot create snapshots." +
+                        lockDetails;
                 SwingUtilities.invokeLater(() ->
-                        JOptionPane.showMessageDialog(null,
-                                "This test plan is locked by another JMeter instance.\n" +
-                                        "You can view and export versions but cannot create snapshots.",
+                        JOptionPane.showMessageDialog(null, msg,
                                 "SCM Plugin — Read-Only Mode", JOptionPane.INFORMATION_MESSAGE));
             }
         } catch (Exception e) {
@@ -126,16 +135,14 @@ public final class ScmInitializer {
     public void notifyVersionsChanged() {
         SwingUtilities.invokeLater(() -> {
             ScmContext ctx = currentContext;
-            if (ctx != null) {
-                if (historyPanel != null) {
-                    historyPanel.refresh(ctx);
-                }
-                if (dirtyIndicator != null) {
-                    dirtyIndicator.refresh(ctx);
-                }
-                if (lockButton != null) {
-                    refreshLockButton(ctx);
-                }
+            if (historyPanel != null) {
+                historyPanel.refresh(ctx);
+            }
+            if (dirtyIndicator != null) {
+                dirtyIndicator.refresh(ctx);
+            }
+            if (lockButton != null) {
+                refreshLockButton(ctx);
             }
         });
     }
@@ -197,6 +204,8 @@ public final class ScmInitializer {
                 if (ctx == null || ctx.isDisposed() || !ctx.getJmxFile().equals(jmxPath)) {
                     initializeForTestPlan(jmxPath);
                 }
+            } else if (currentContext != null && !currentContext.isDisposed()) {
+                disposeCurrentContext();
             }
         } catch (Exception e) {
             log.warn("Could not initialize context: {}", e.getMessage());

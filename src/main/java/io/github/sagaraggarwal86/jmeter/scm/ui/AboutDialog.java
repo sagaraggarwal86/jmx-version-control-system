@@ -29,7 +29,10 @@ public final class AboutDialog {
 
         panel.add(Box.createVerticalStrut(8));
 
-        JLabel version = new JLabel("Version 1.0.0");
+        String versionText = "Version ";
+        String implVersion = AboutDialog.class.getPackage().getImplementationVersion();
+        versionText += (implVersion != null) ? implVersion : "dev";
+        JLabel version = new JLabel(versionText);
         version.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(version);
 
@@ -46,9 +49,9 @@ public final class AboutDialog {
 
         // R10: Uninstall note
         JLabel note = new JLabel(
-                "<html><b>Note:</b> Version snapshots are stored in .history folders alongside<br>" +
-                        "your .jmx files. Removing this plugin does <b>not</b> delete your<br>" +
-                        "version history.</html>");
+                "<html><b>Note:</b> Version snapshots are stored in the configured storage<br>" +
+                        "location (default: .history). Removing this plugin does <b>not</b><br>" +
+                        "delete your version history.</html>");
         note.setForeground(new Color(100, 100, 100));
         note.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(note);

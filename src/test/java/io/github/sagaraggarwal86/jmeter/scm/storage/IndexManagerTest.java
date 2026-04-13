@@ -110,9 +110,9 @@ class IndexManagerTest {
         // Write corrupt index.json
         Files.writeString(tempDir.resolve("index.json"), "this is not valid json{{{");
 
-        // Create some .jmxv files
-        Files.writeString(tempDir.resolve("v001.jmxv"), "content 1");
-        Files.writeString(tempDir.resolve("v003.jmxv"), "content 3");
+        // Create some .jmxv files (naming: <stem>_<NNN>.jmxv)
+        Files.writeString(tempDir.resolve("plan_001.jmxv"), "content 1");
+        Files.writeString(tempDir.resolve("plan_003.jmxv"), "content 3");
 
         VersionIndex recovered = indexManager.load(tempDir);
 

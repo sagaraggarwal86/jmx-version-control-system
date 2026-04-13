@@ -58,18 +58,23 @@ public final class ScmContext {
         this.disposed = false;
     }
 
+    private static Path resolveParent(Path jmxFile) {
+        Path parent = jmxFile.getParent();
+        return parent != null ? parent : Path.of(".");
+    }
+
+    private static String extractStem(Path jmxFile) {
+        return FileOperations.extractStem(jmxFile);
+    }
+
     /**
      * Resolves the per-plan storage directory: {@code .history/<jmx-stem>/}
      * where jmx-stem is the filename without extension (e.g., "test1" for "test1.jmx").
      */
     private static Path resolveStorageDir(Path jmxFile) {
-        String storageLocation = ScmConfigManager.getGlobalStorageLocation();
-        Path parent = jmxFile.getParent();
-        if (parent == null) {
-            parent = Path.of(".");
-        }
-        String stem = jmxFile.getFileName().toString().replaceFirst("\\.[^.]+$", "");
-        return parent.resolve(storageLocation).resolve(stem);
+        return resolveParent(jmxFile)
+                .resolve(ScmConfigManager.getGlobalStorageLocation())
+                .resolve(extractStem(jmxFile));
     }
 
     /**

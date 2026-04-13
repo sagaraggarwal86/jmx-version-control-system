@@ -44,10 +44,10 @@ class SnapshotEngineTest {
 
         assertNotNull(entry);
         assertEquals(1, entry.getVersion());
-        assertEquals("v001.jmxv", entry.getFile());
+        assertEquals("test_001.jmxv", entry.getFile());
         assertEquals(TriggerType.CHECKPOINT, entry.getTrigger());
         assertNull(entry.getNote());
-        assertTrue(Files.exists(storageDir.resolve("v001.jmxv")));
+        assertTrue(Files.exists(storageDir.resolve("test_001.jmxv")));
         assertEquals(1, index.getVersions().size());
     }
 
@@ -163,8 +163,8 @@ class SnapshotEngineTest {
         snapshotEngine.deleteVersion(storageDir, index, 1);
 
         assertEquals(1, index.getVersions().size());
-        assertFalse(Files.exists(storageDir.resolve("v001.jmxv")));
-        assertTrue(Files.exists(storageDir.resolve("v002.jmxv")));
+        assertFalse(Files.exists(storageDir.resolve("test_001.jmxv")));
+        assertTrue(Files.exists(storageDir.resolve("test_002.jmxv")));
     }
 
     @Test

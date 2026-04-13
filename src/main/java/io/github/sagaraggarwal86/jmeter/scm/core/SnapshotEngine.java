@@ -63,7 +63,8 @@ public final class SnapshotEngine {
             retentionManager.pruneIfNeeded(storageDir, index);
 
             int versionNumber = index.getNextVersionNumber();
-            String fileName = FileOperations.snapshotFileName(versionNumber);
+            String stem = FileOperations.extractStem(jmxFile);
+            String fileName = FileOperations.snapshotFileName(stem, versionNumber);
             FileOperations.createSnapshot(jmxFile, storageDir, fileName);
 
             VersionEntry entry = new VersionEntry(

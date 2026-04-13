@@ -63,6 +63,7 @@ public final class ScmConfigManager {
         return (prop != null && !prop.isBlank()) ? prop : DEFAULT_STORAGE_LOCATION;
     }
 
+
     /**
      * Returns max retention, resolved with priority: index.json override > jmeter.properties > default.
      */
@@ -104,12 +105,15 @@ public final class ScmConfigManager {
             if (userProps == null) return;
 
             // Read existing content, replace or append
+            // Escape backslashes for .properties format (\ is escape char)
             String content = Files.exists(userProps) ? Files.readString(userProps) : "";
-            String line = key + "=" + value;
+            String escapedValue = value.replace("\\", "\\\\");
+            String line = key + "=" + escapedValue;
 
             if (content.contains(key + "=")) {
-                // Replace existing line
-                content = content.replaceAll("(?m)^" + key.replace(".", "\\.") + "=.*$", line);
+                // Replace existing line (quoteReplacement prevents \ being treated as regex escape)
+                content = content.replaceAll("(?m)^" + key.replace(".", "\\.") + "=.*$",
+                        java.util.regex.Matcher.quoteReplacement(line));
             } else {
                 // Append with SCM header if this is the first scm property
                 if (!content.contains("# SCM Plugin")) {
@@ -153,7 +157,23 @@ public final class ScmConfigManager {
 
             if (toAppend.length() > 0) {
                 if (!content.contains("# SCM Plugin")) {
-                    toAppend.insert(0, "\n# SCM Plugin Settings\n");
+                    toAppend.insert(0, "\n# SCM Plugin Settings\n" +
+                            "# Recommended: Use Tools > Version Control > Settings for guided migration.\n" +
+                            "#\n" +
+                            "# Changing storage location via this file:\n" +
+                            "#   1. Close JMeter\n" +
+                            "#   2. Update scm.storage.location below\n" +
+                            "#   3. Manually move existing .history folders to the new location\n" +
+                            "#   4. Start JMeter — the new location is used automatically\n" +
+                            "#   Note: Changes while JMeter is running have no effect until restart.\n" +
+                            "#\n" +
+                            "# Property reference:\n" +
+                            "#   scm.storage.location          — Relative (to .jmx) or absolute path (default: .history)\n" +
+                            "#   scm.max.retention             — Max versions per test plan (default: 20)\n" +
+                            "#   scm.lock.stale.minutes        — Lock timeout in minutes (default: 60)\n" +
+                            "#   scm.autosave.enabled          — Enable auto-checkpoint (default: false)\n" +
+                            "#   scm.autosave.interval.minutes — Auto-checkpoint interval in minutes (default: 5)\n" +
+                            "#   scm.toolbar.visible           — Show SCM toolbar buttons (default: true)\n");
                 }
                 Files.writeString(userProps, content + toAppend,
                         StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);

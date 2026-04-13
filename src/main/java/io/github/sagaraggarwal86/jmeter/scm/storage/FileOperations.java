@@ -189,13 +189,25 @@ public final class FileOperations {
 
     /**
      * Generates the snapshot filename for a given version number.
-     * Zero-padded to 3 digits: v001.jmxv, v002.jmxv, etc.
+     * Extracts the filename without extension from a path.
+     * E.g., "test1.jmx" → "test1", "HTTP Request.jmx" → "HTTP Request".
      *
+     * @param path the file path
+     * @return filename without extension
+     */
+    public static String extractStem(Path path) {
+        return path.getFileName().toString().replaceFirst("\\.[^.]+$", "");
+    }
+
+    /**
+     * Format: {@code <stem>_<NNN>.jmxv} (e.g., "HTTP Request_001.jmxv").
+     *
+     * @param stem          the jmx filename without extension
      * @param versionNumber the version number
      * @return formatted filename
      */
-    public static String snapshotFileName(int versionNumber) {
-        return String.format("v%03d.jmxv", versionNumber);
+    public static String snapshotFileName(String stem, int versionNumber) {
+        return String.format("%s_%03d.jmxv", stem, versionNumber);
     }
 
     /**

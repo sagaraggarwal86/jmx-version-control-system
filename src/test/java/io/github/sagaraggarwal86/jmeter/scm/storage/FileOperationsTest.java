@@ -116,10 +116,10 @@ class FileOperationsTest {
 
     @Test
     void snapshotFileNameZeroPads() {
-        assertEquals("v001.jmxv", FileOperations.snapshotFileName(1));
-        assertEquals("v010.jmxv", FileOperations.snapshotFileName(10));
-        assertEquals("v100.jmxv", FileOperations.snapshotFileName(100));
-        assertEquals("v999.jmxv", FileOperations.snapshotFileName(999));
+        assertEquals("HTTP Request_001.jmxv", FileOperations.snapshotFileName("HTTP Request", 1));
+        assertEquals("test_010.jmxv", FileOperations.snapshotFileName("test", 10));
+        assertEquals("my-plan_100.jmxv", FileOperations.snapshotFileName("my-plan", 100));
+        assertEquals("script_999.jmxv", FileOperations.snapshotFileName("script", 999));
     }
 
     @Test
