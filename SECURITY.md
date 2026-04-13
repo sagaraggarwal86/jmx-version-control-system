@@ -15,15 +15,15 @@ the user's file system permissions.
 
 ### Threat Surface
 
-| Area              | Design                                                                                     |
-|-------------------|--------------------------------------------------------------------------------------------|
+| Area              | Design                                                                                                                        |
+|-------------------|-------------------------------------------------------------------------------------------------------------------------------|
 | **File I/O**      | Atomic temp + move writes. Storage paths resolved from `user.properties` and .jmx parent — no user-controlled path traversal. |
-| **Lock files**    | Advisory locks (JSON with hostname + PID). Prevents accidental concurrent writes, not malicious access.                        |
-| **Serialization** | Jackson with `FAIL_ON_UNKNOWN_PROPERTIES = false`. No polymorphic deserialization. Input limited to index.json and .lock.      |
-| **Reflection**    | 4 touchpoints into JMeter MainFrame internals. All wrapped in try-catch with graceful fallback.                                |
-| **Audit log**     | Append-only JSON-lines. Notes stored as plain text, never interpreted or executed.                                             |
-| **Properties**    | Read via `JMeterUtils.getProperty()`. Type-validated with hardcoded defaults on failure.                                       |
-| **No network**    | Zero outbound connections. No telemetry, no update checks, no remote storage.                                                  |
+| **Lock files**    | Advisory locks (JSON with hostname + PID). Prevents accidental concurrent writes, not malicious access.                       |
+| **Serialization** | Jackson with `FAIL_ON_UNKNOWN_PROPERTIES = false`. No polymorphic deserialization. Input limited to index.json and .lock.     |
+| **Reflection**    | 4 touchpoints into JMeter MainFrame internals. All wrapped in try-catch with graceful fallback.                               |
+| **Audit log**     | Append-only JSON-lines. Notes stored as plain text, never interpreted or executed.                                            |
+| **Properties**    | Read via `JMeterUtils.getProperty()`. Type-validated with hardcoded defaults on failure.                                      |
+| **No network**    | Zero outbound connections. No telemetry, no update checks, no remote storage.                                                 |
 
 ### What JVCS Does NOT Protect Against
 
@@ -36,7 +36,8 @@ the user's file system permissions.
 ## Reporting a Vulnerability
 
 1. **Do not** open a public GitHub issue.
-2. Use GitHub's [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
+2. Use
+   GitHub's [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
    on this repository, or email **sagaraggarwal86@gmail.com** with a description, reproduction
    steps, and potential impact.
 3. Acknowledgment within 72 hours. Fix prioritized by severity.

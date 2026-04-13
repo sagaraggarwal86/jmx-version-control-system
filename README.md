@@ -25,35 +25,35 @@ sessions — no Git, no SVN, no external tools.
 
 ## Features
 
-| Feature                     | Description                                                                              |
-|-----------------------------|------------------------------------------------------------------------------------------|
-| **Auto-Snapshot on Save**   | Creates a version snapshot after every Ctrl+S. Duplicate saves skipped via SHA-256 dedup  |
-| **Manual Checkpoint**       | Named snapshot with optional note (500 chars) and optional freeze. Toolbar C or Ctrl+K   |
-| **Version History Panel**   | Bottom dockable panel with version list, actions, retention warning banner                |
-| **Restore / Rollback**      | One-click restore to any version. Auto-snapshots current state first (safety net)         |
-| **Freeze (Pin) Versions**   | Frozen versions are exempt from retention pruning and bulk deletion                       |
-| **Auto-Checkpoint**         | Configurable periodic auto-save + snapshot (disabled by default)                         |
-| **Selective Deletion**      | Header checkbox select-all + Delete Versions. Latest and frozen versions protected        |
-| **Export Version**           | Export any snapshot as a .jmx file to a location of your choice                          |
-| **Configurable Retention**  | Max versions per plan (default 20). FIFO pruning of oldest unpinned versions             |
-| **Configurable Storage**    | Relative or absolute storage path. GUI migration with Migrate/Reset/Cancel dialog         |
-| **Lock File Mechanism**     | Hostname + PID ownership. Stale detection. Force release with confirmation                |
-| **Dirty State Indicator**   | Toolbar indicator: green (clean), amber (dirty), red (read-only)                        |
-| **Toolbar Buttons**         | C (Checkpoint), H (History), I (Indicator), L (Lock), D (Delete). Visibility togglable   |
-| **Keyboard Shortcuts**      | Ctrl+K (Checkpoint), Ctrl+H (Toggle History)                                             |
-| **Audit Log**               | JSON-lines audit trail of all actions. 1MB rotation with single backup                   |
-| **Tools Menu Integration**  | Tools > Version Control > History, Checkpoint, Settings, About                           |
-| **Self-Healing**            | Corrupt index.json auto-recovered from .jmxv filenames on disk                           |
-| **Pure Additive**           | Never modifies JMeter behavior. All reflection with graceful fallback                    |
+| Feature                    | Description                                                                              |
+|----------------------------|------------------------------------------------------------------------------------------|
+| **Auto-Snapshot on Save**  | Creates a version snapshot after every Ctrl+S. Duplicate saves skipped via SHA-256 dedup |
+| **Manual Checkpoint**      | Named snapshot with optional note (500 chars) and optional freeze. Toolbar C or Ctrl+K   |
+| **Version History Panel**  | Bottom dockable panel with version list, actions, retention warning banner               |
+| **Restore / Rollback**     | One-click restore to any version. Auto-snapshots current state first (safety net)        |
+| **Freeze (Pin) Versions**  | Frozen versions are exempt from retention pruning and bulk deletion                      |
+| **Auto-Checkpoint**        | Configurable periodic auto-save + snapshot (disabled by default)                         |
+| **Selective Deletion**     | Header checkbox select-all + Delete Versions. Latest and frozen versions protected       |
+| **Export Version**         | Export any snapshot as a .jmx file to a location of your choice                          |
+| **Configurable Retention** | Max versions per plan (default 20). FIFO pruning of oldest unpinned versions             |
+| **Configurable Storage**   | Relative or absolute storage path. GUI migration with Migrate/Reset/Cancel dialog        |
+| **Lock File Mechanism**    | Hostname + PID ownership. Stale detection. Force release with confirmation               |
+| **Dirty State Indicator**  | Toolbar indicator: green (clean), amber (dirty), red (read-only)                         |
+| **Toolbar Buttons**        | C (Checkpoint), H (History), I (Indicator), L (Lock), D (Delete). Visibility togglable   |
+| **Keyboard Shortcuts**     | Ctrl+K (Checkpoint), Ctrl+H (Toggle History)                                             |
+| **Audit Log**              | JSON-lines audit trail of all actions. 1MB rotation with single backup                   |
+| **Tools Menu Integration** | Tools > Version Control > History, Checkpoint, Settings, About                           |
+| **Self-Healing**           | Corrupt index.json auto-recovered from .jmxv filenames on disk                           |
+| **Pure Additive**          | Never modifies JMeter behavior. All reflection with graceful fallback                    |
 
 ---
 
 ## Requirements
 
-| Requirement   | Version              |
-|---------------|----------------------|
-| Java          | 17                   |
-| Apache JMeter | 5.6.3                |
+| Requirement   | Version             |
+|---------------|---------------------|
+| Java          | 17                  |
+| Apache JMeter | 5.6.3               |
 | Maven         | 3.8+ *(build only)* |
 
 ---
@@ -129,19 +129,19 @@ non-latest versions are frozen (no versions can be pruned).
 
 The L button serves three purposes depending on lock state:
 
-| State       | Click Behavior                                           |
-|-------------|----------------------------------------------------------|
-| Lock active | Shows "Lock active" tooltip                              |
-| Read-only   | Attempts polite lock acquisition (succeeds if stale)     |
-| Held by other | Shows hostname, PID, timestamp; offers force release   |
+| State         | Click Behavior                                       |
+|---------------|------------------------------------------------------|
+| Lock active   | Shows "Lock active" tooltip                          |
+| Read-only     | Attempts polite lock acquisition (succeeds if stale) |
+| Held by other | Shows hostname, PID, timestamp; offers force release |
 
 ### Dirty Indicator (I)
 
-| Color  | Meaning                   |
-|--------|---------------------------|
-| Green  | Clean — no unsaved changes |
-| Amber  | Dirty — unsaved changes    |
-| Red    | Read-only mode             |
+| Color | Meaning                    |
+|-------|----------------------------|
+| Green | Clean — no unsaved changes |
+| Amber | Dirty — unsaved changes    |
+| Red   | Read-only mode             |
 
 ---
 
@@ -151,14 +151,14 @@ The L button serves three purposes depending on lock state:
 
 Access via **Tools > Version Control > Settings** or configure in `user.properties`.
 
-| Setting              | Property                        | Default    | Description                                    |
-|----------------------|---------------------------------|------------|------------------------------------------------|
-| Storage Location     | `scm.storage.location`          | `.history` | Relative (to .jmx) or absolute path           |
-| Max Retention        | `scm.max.retention`             | `20`       | Max versions per test plan                     |
-| Stale Lock Timeout   | `scm.lock.stale.minutes`        | `60`       | Minutes before a lock is considered stale      |
-| Auto-Save Enabled    | `scm.autosave.enabled`          | `false`    | Enable periodic auto-checkpoint                |
-| Auto-Save Interval   | `scm.autosave.interval.minutes` | `5`        | Auto-checkpoint interval in minutes            |
-| Toolbar Visible      | `scm.toolbar.visible`           | `true`     | Show/hide SCM toolbar buttons                  |
+| Setting            | Property                        | Default    | Description                               |
+|--------------------|---------------------------------|------------|-------------------------------------------|
+| Storage Location   | `scm.storage.location`          | `.history` | Relative (to .jmx) or absolute path       |
+| Max Retention      | `scm.max.retention`             | `20`       | Max versions per test plan                |
+| Stale Lock Timeout | `scm.lock.stale.minutes`        | `60`       | Minutes before a lock is considered stale |
+| Auto-Save Enabled  | `scm.autosave.enabled`          | `false`    | Enable periodic auto-checkpoint           |
+| Auto-Save Interval | `scm.autosave.interval.minutes` | `5`        | Auto-checkpoint interval in minutes       |
+| Toolbar Visible    | `scm.toolbar.visible`           | `true`     | Show/hide SCM toolbar buttons             |
 
 `user.properties` is the single source of truth for all settings. Default values are written
 automatically on first plugin activation with inline documentation.
@@ -167,11 +167,11 @@ automatically on first plugin activation with inline documentation.
 
 Changing storage location in the Settings dialog triggers a three-option dialog:
 
-| Option     | Behavior                                                                     |
-|------------|-----------------------------------------------------------------------------|
-| **Migrate** | Moves all version files to the new location                                 |
-| **Reset**   | Backs up old files to `<stem>_backup_<timestamp>.zip`, starts fresh         |
-| **Cancel**  | Reverts the change                                                          |
+| Option      | Behavior                                                            |
+|-------------|---------------------------------------------------------------------|
+| **Migrate** | Moves all version files to the new location                         |
+| **Reset**   | Backs up old files to `<stem>_backup_<timestamp>.zip`, starts fresh |
+| **Cancel**  | Reverts the change                                                  |
 
 > [!NOTE]
 > Editing `scm.storage.location` directly in `user.properties` requires a JMeter restart. Use the
@@ -225,15 +225,15 @@ my-test-plan.jmx                    <-- working file
 
 ## Troubleshooting
 
-| Problem                                  | Solution                                                                                  |
-|------------------------------------------|-------------------------------------------------------------------------------------------|
-| Plugin not visible after install         | Verify JAR is in `<JMETER_HOME>/lib/ext/`. Restart JMeter.                                |
-| Toolbar buttons missing                  | Check `scm.toolbar.visible=true` in `user.properties`. Reflection may fail on non-5.6.3.  |
-| "Read-Only Mode" dialog on open          | Another JMeter instance holds the lock. Use L button to force release if the other closed. |
-| History panel empty                       | Save the test plan at least once. New/unsaved plans have no history.                      |
-| Restore button disabled                  | Snapshot file missing from disk. Delete the orphaned entry to clean up.                    |
-| "Cannot reduce retention" error          | Unfreeze some versions first. Floor = frozen count + 1.                                    |
-| Versions not pruned at max retention     | All non-latest versions are frozen. Unfreeze to allow FIFO pruning.                        |
+| Problem                              | Solution                                                                                   |
+|--------------------------------------|--------------------------------------------------------------------------------------------|
+| Plugin not visible after install     | Verify JAR is in `<JMETER_HOME>/lib/ext/`. Restart JMeter.                                 |
+| Toolbar buttons missing              | Check `scm.toolbar.visible=true` in `user.properties`. Reflection may fail on non-5.6.3.   |
+| "Read-Only Mode" dialog on open      | Another JMeter instance holds the lock. Use L button to force release if the other closed. |
+| History panel empty                  | Save the test plan at least once. New/unsaved plans have no history.                       |
+| Restore button disabled              | Snapshot file missing from disk. Delete the orphaned entry to clean up.                    |
+| "Cannot reduce retention" error      | Unfreeze some versions first. Floor = frozen count + 1.                                    |
+| Versions not pruned at max retention | All non-latest versions are frozen. Unfreeze to allow FIFO pruning.                        |
 
 ---
 

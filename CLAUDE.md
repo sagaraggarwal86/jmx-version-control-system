@@ -33,7 +33,7 @@
 - For every decision point or design choice, present options in a concise table:
 
   | Option | Risk | Effort | Impact | Recommendation |
-    |--------|------|--------|--------|----------------|
+      |--------|------|--------|--------|----------------|
 
   Highlight the recommended option. Keep descriptions brief — one line per cell.
 
@@ -63,12 +63,12 @@ one-click rollback. Single-user, local-disk operation. No Git, no SVN, no extern
 
 ### Package Structure
 
-| Package   | Key Classes                                                                                                                                                                                                                                                                                       |
-|-----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `model`   | `VersionEntry`, `VersionIndex` (unmodifiable collection getters, explicit mutation methods), `TriggerType` (CHECKPOINT, AUTO_CHECKPOINT, RESTORE), `LockInfo`                                                                                                                                      |
-| `config`  | `ScmConfigManager` — **`user.properties` is single source of truth** for all settings. `index.json` stores per-plan data (versions, pins, retention) but NOT storage location. All getters have hardcoded defaults; deleted/blank values self-heal. Property detection uses line-anchored `Pattern.find()` with `Pattern.quote()`. |
-| `storage` | `FileOperations` (copy, atomic restore, checksum), `IndexManager` (index.json CRUD, self-heal, schema version validation), `LockManager` (.lock, hostname+PID ownership), `AuditLogger` (audit.log, 1MB rotation)                                                                                 |
-| `core`    | `ScmContext` (per-plan lifecycle, volatile `readOnly`/`disposed`), `ScmInitializer` (lazy init, singleton, toolbar), `SaveCommandWrapper` (save hook), `ScmOpenListener` (open/close/new lifecycle), `SnapshotEngine` (checksum outside lock), `DirtyTracker` (lazy checksum init), `RetentionManager` (preserves index/disk sync on delete failure), `AutoSaveScheduler` (cancellable worker) |
+| Package   | Key Classes                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `model`   | `VersionEntry`, `VersionIndex` (unmodifiable collection getters, explicit mutation methods), `TriggerType` (CHECKPOINT, AUTO_CHECKPOINT, RESTORE), `LockInfo`                                                                                                                                                                                                                                                                                                                        |
+| `config`  | `ScmConfigManager` — **`user.properties` is single source of truth** for all settings. `index.json` stores per-plan data (versions, pins, retention) but NOT storage location. All getters have hardcoded defaults; deleted/blank values self-heal. Property detection uses line-anchored `Pattern.find()` with `Pattern.quote()`.                                                                                                                                                   |
+| `storage` | `FileOperations` (copy, atomic restore, checksum), `IndexManager` (index.json CRUD, self-heal, schema version validation), `LockManager` (.lock, hostname+PID ownership), `AuditLogger` (audit.log, 1MB rotation)                                                                                                                                                                                                                                                                    |
+| `core`    | `ScmContext` (per-plan lifecycle, volatile `readOnly`/`disposed`), `ScmInitializer` (lazy init, singleton, toolbar), `SaveCommandWrapper` (save hook), `ScmOpenListener` (open/close/new lifecycle), `SnapshotEngine` (checksum outside lock), `DirtyTracker` (lazy checksum init), `RetentionManager` (preserves index/disk sync on delete failure), `AutoSaveScheduler` (cancellable worker)                                                                                       |
 | `ui`      | `VersionHistoryPanel` (bottom dockable, retention warning banner), `ScmMenuCreator` (JMeter `MenuCreator` entry point, deferred startup init), `ScmMenuHandler` (Tools menu), `DirtyIndicator` (toolbar status), `CheckpointDialog` (500-char note limit, optional freeze checkbox), `SettingsDialog` (custom JDialog: OK/Cancel/Reset to Defaults, storage path validation, Migrate/Reset/Cancel storage dialog), `AboutDialog` (version from manifest), `Toast`, `TimeFormatUtils` |
 
 ### Dependency Direction (Strict)
@@ -153,7 +153,8 @@ No circular or upward dependencies.
 - **Restore**: Append-only. Snapshots current state (RESTORE trigger, note "Replaced by vN") before restoring.
   Target copied to temp before auto-snapshot to survive pruning.
 - **Lock**: Application-level (no `FileLock`). Ownership = hostname + PID. Dual-purpose L button: verify ownership →
-  polite acquire → force release with confirmation. `ensureWriteLock()` on every write op. Dynamic tooltip reflects state.
+  polite acquire → force release with confirmation. `ensureWriteLock()` on every write op. Dynamic tooltip reflects
+  state.
 - **Missing snapshots**: `refresh()` detects via `Files.exists()`, disables Restore/Export with tooltip. Delete cleans
   orphaned entries. WARN log level.
 - **Swing tooltips**: `JTable.getToolTipText(MouseEvent)` override — renderer-level tooltips don't receive mouse events.
