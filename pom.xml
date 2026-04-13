@@ -6,7 +6,7 @@
 
     <groupId>io.github.sagaraggarwal86</groupId>
     <artifactId>jmx-version-control-system</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <packaging>jar</packaging>
 
     <name>JMX Version Control System (JVCS)</name>
