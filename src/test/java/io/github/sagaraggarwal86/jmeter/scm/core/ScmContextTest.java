@@ -130,7 +130,6 @@ class ScmContextTest {
         assertThrows(IllegalStateException.class, () -> ctx.createSnapshot(TriggerType.CHECKPOINT, null));
         assertThrows(IllegalStateException.class, () -> ctx.restore(1));
         assertThrows(IllegalStateException.class, () -> ctx.deleteVersion(1));
-        assertThrows(IllegalStateException.class, () -> ctx.clearHistory());
     }
 
     @Test
@@ -176,28 +175,6 @@ class ScmContextTest {
     }
 
     @Test
-    void clearHistoryPreservesLatestAndPinned() throws IOException {
-        ScmContext ctx = new ScmContext(jmxFile, indexManager, lockManager);
-        ctx.initialize();
-
-        ctx.createSnapshot(TriggerType.CHECKPOINT, null);
-        Files.writeString(jmxFile, "v2");
-        ctx.createSnapshot(TriggerType.CHECKPOINT, null);
-        Files.writeString(jmxFile, "v3");
-        ctx.createSnapshot(TriggerType.CHECKPOINT, null);
-
-        // Pin v1
-        ctx.getVersionIndex().pin(1);
-
-        int deleted = ctx.clearHistory();
-
-        assertEquals(1, deleted); // Only v2 deleted (v1 pinned, v3 latest)
-        assertEquals(2, ctx.getVersionIndex().getVersions().size());
-
-        ctx.dispose();
-    }
-
-    @Test
     void pruneExcessVersionsRespectRetention() throws IOException {
         jmeterUtilsMock.when(() -> JMeterUtils.getProperty("scm.max.retention")).thenReturn("2");
 
@@ -214,9 +191,8 @@ class ScmContextTest {
         Files.writeString(jmxFile, "v4");
         ctx.createSnapshot(TriggerType.CHECKPOINT, null);
 
-        // SnapshotEngine prunes before adding new version, so count can be maxRetention + 1
-        // Without pruning it would be 4; with pruning it should be 3
-        assertEquals(3, ctx.getVersionIndex().getVersions().size());
+        // SnapshotEngine prunes after adding new version, so count stays at maxRetention
+        assertEquals(2, ctx.getVersionIndex().getVersions().size());
 
         ctx.dispose();
     }

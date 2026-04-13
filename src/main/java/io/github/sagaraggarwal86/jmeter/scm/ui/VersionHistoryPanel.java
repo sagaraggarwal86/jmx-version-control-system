@@ -92,11 +92,6 @@ public final class VersionHistoryPanel extends JPanel {
         retentionLabel.setForeground(Color.GRAY);
         header.add(retentionLabel);
 
-        JButton closeButton = new JButton("Close");
-        closeButton.setMargin(new Insets(1, 4, 1, 4));
-        closeButton.addActionListener(e -> setVisible(false));
-        header.add(closeButton);
-
         add(header, BorderLayout.NORTH);
 
         // Table
@@ -203,8 +198,12 @@ public final class VersionHistoryPanel extends JPanel {
         legend.add(new JLabel("= Manual (Ctrl+K)"));
         legend.add(Box.createHorizontalStrut(12));
         legend.add(createLegendLabel("AUTO_CHECKPOINT", COLOR_AUTO_CHECKPOINT));
-        int interval = ScmConfigManager.getAutoSaveIntervalMinutes();
-        periodicLegendLabel = new JLabel("= Periodic (" + interval + "m)");
+        if (ScmConfigManager.isAutoSaveEnabled()) {
+            int interval = ScmConfigManager.getAutoSaveIntervalMinutes();
+            periodicLegendLabel = new JLabel("= Periodic (" + interval + "m)");
+        } else {
+            periodicLegendLabel = new JLabel("= Disabled");
+        }
         legend.add(periodicLegendLabel);
         legend.add(Box.createHorizontalStrut(12));
         legend.add(createLegendLabel("RESTORE", COLOR_RESTORE));
@@ -243,9 +242,10 @@ public final class VersionHistoryPanel extends JPanel {
         }
 
         VersionIndex index = context.getVersionIndex();
+        VersionEntry latest = index.getLatestVersion();
         List<VersionEntry> entries = new ArrayList<>(index.getVersions());
         java.util.Collections.reverse(entries);
-        tableModel.setLatestVersion(index.getLatestVersion());
+        tableModel.setLatestVersion(latest);
         tableModel.setPinnedVersions(index.getPinnedVersions());
 
         // Detect orphaned index entries (missing .jmxv files)
@@ -266,16 +266,35 @@ public final class VersionHistoryPanel extends JPanel {
         storageSizeLabel.setText(formatSize(sizeBytes));
 
         if (context.getDirtyTracker().isDirty()) {
-            VersionEntry latest = index.getLatestVersion();
             dirtyLabel.setText("Modified since v" + (latest != null ? latest.getVersion() : "?"));
         } else {
             dirtyLabel.setText("");
         }
 
-        retentionLabel.setText("Retention: " + index.getMaxRetention());
+        int maxRetention = ScmConfigManager.getMaxRetention(index);
+        if (index.getVersions().size() >= maxRetention) {
+            VersionEntry oldestPruneable = index.getVersions().stream()
+                    .filter(e -> !index.isPinned(e.getVersion()))
+                    .filter(e -> latest == null || e.getVersion() != latest.getVersion())
+                    .findFirst()
+                    .orElse(null);
+            if (oldestPruneable != null) {
+                retentionLabel.setText("<html>Retention: " + maxRetention
+                        + " <b><font color='red'>\u26A0 At limit. Next checkpoint will replace oldest version.</font></b></html>");
+            } else {
+                retentionLabel.setText("<html>Retention: " + maxRetention
+                        + " <b><font color='red'>\u26A0 At limit. All versions frozen.</font></b></html>");
+            }
+        } else {
+            retentionLabel.setText("Retention: " + maxRetention);
+        }
 
-        int interval = ScmConfigManager.getAutoSaveIntervalMinutes();
-        periodicLegendLabel.setText("= Periodic (" + interval + "m)");
+        if (ScmConfigManager.isAutoSaveEnabled()) {
+            int interval = ScmConfigManager.getAutoSaveIntervalMinutes();
+            periodicLegendLabel.setText("= Periodic (" + interval + "m)");
+        } else {
+            periodicLegendLabel.setText("= Disabled");
+        }
     }
 
     /**
@@ -310,7 +329,7 @@ public final class VersionHistoryPanel extends JPanel {
         if (context == null || context.isReadOnly()) {
             JOptionPane.showMessageDialog(this,
                     "No active test plan or read-only mode.",
-                    "SCM Plugin", JOptionPane.WARNING_MESSAGE);
+                    "JVCS", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -318,7 +337,7 @@ public final class VersionHistoryPanel extends JPanel {
         if (selected.isEmpty()) {
             JOptionPane.showMessageDialog(this,
                     "No versions selected. Use the checkboxes to select versions for deletion.",
-                    "SCM Plugin", JOptionPane.INFORMATION_MESSAGE);
+                    "JVCS", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
@@ -344,7 +363,7 @@ public final class VersionHistoryPanel extends JPanel {
             if (skippedLatest > 0) msg.append("\n• Latest version cannot be deleted.");
             if (skippedFrozen > 0) msg.append("\n• ").append(skippedFrozen).append(" frozen version(s) skipped.");
             JOptionPane.showMessageDialog(this, msg.toString(),
-                    "SCM Plugin", JOptionPane.INFORMATION_MESSAGE);
+                    "JVCS", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
@@ -386,7 +405,7 @@ public final class VersionHistoryPanel extends JPanel {
                     log.error("Delete selected versions failed: {}", cause.getMessage(), e);
                     JOptionPane.showMessageDialog(VersionHistoryPanel.this,
                             "Delete failed: " + cause.getMessage(),
-                            "SCM Plugin", JOptionPane.ERROR_MESSAGE);
+                            "JVCS", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
@@ -410,7 +429,7 @@ public final class VersionHistoryPanel extends JPanel {
             JOptionPane.showMessageDialog(this,
                     "Cannot restore — this test plan is in read-only mode.\n" +
                             "Another JMeter instance holds the lock.",
-                    "SCM Plugin", JOptionPane.WARNING_MESSAGE);
+                    "JVCS", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -441,7 +460,7 @@ public final class VersionHistoryPanel extends JPanel {
                     log.warn("Restore failed: {}", cause.getMessage());
                     JOptionPane.showMessageDialog(VersionHistoryPanel.this,
                             "Restore failed: " + cause.getMessage(),
-                            "SCM Plugin", JOptionPane.ERROR_MESSAGE);
+                            "JVCS", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
@@ -499,7 +518,7 @@ public final class VersionHistoryPanel extends JPanel {
                     JOptionPane.showMessageDialog(VersionHistoryPanel.this,
                             "Restored successfully but auto-reload failed.\n" +
                                     "Please reopen the file manually (Ctrl+O).",
-                            "SCM Plugin", JOptionPane.WARNING_MESSAGE);
+                            "JVCS", JOptionPane.WARNING_MESSAGE);
                 }
             }
         };
@@ -540,7 +559,7 @@ public final class VersionHistoryPanel extends JPanel {
                     log.warn("Export failed: {}", cause.getMessage());
                     JOptionPane.showMessageDialog(VersionHistoryPanel.this,
                             "Export failed: " + cause.getMessage(),
-                            "SCM Plugin", JOptionPane.ERROR_MESSAGE);
+                            "JVCS", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };

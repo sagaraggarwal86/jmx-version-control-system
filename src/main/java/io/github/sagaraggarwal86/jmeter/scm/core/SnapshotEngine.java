@@ -60,8 +60,6 @@ public final class SnapshotEngine {
                 return null;
             }
 
-            retentionManager.pruneIfNeeded(storageDir, index);
-
             int versionNumber = index.getNextVersionNumber();
             String stem = FileOperations.extractStem(jmxFile);
             String fileName = FileOperations.snapshotFileName(stem, versionNumber);
@@ -69,7 +67,10 @@ public final class SnapshotEngine {
 
             VersionEntry entry = new VersionEntry(
                     versionNumber, fileName, LocalDateTime.now(), trigger, note, checksum);
-            indexManager.addVersion(storageDir, index, entry);
+            index.getVersions().add(entry);
+
+            retentionManager.pruneIfNeeded(storageDir, index);
+            indexManager.save(storageDir, index);
 
             log.info("Created snapshot v{} ({})", versionNumber, trigger);
             return entry;
@@ -103,11 +104,17 @@ public final class SnapshotEngine {
                     + ". The version entry exists in the index but the file was deleted from disk.");
         }
 
-        createSnapshot(jmxFile, storageDir, index, TriggerType.RESTORE, "Replaced by v" + versionNumber);
+        // Copy target to temp file before auto-snapshot — pruning may delete it
+        Path tempRestore = storageDir.resolve(target.getFile() + ".restoring");
+        Files.copy(snapshotPath, tempRestore, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
-        FileOperations.atomicRestore(snapshotPath, jmxFile);
-
-        log.info("Restored to version {}", versionNumber);
+        try {
+            createSnapshot(jmxFile, storageDir, index, TriggerType.RESTORE, "Replaced by v" + versionNumber);
+            FileOperations.atomicRestore(tempRestore, jmxFile);
+            log.info("Restored to version {}", versionNumber);
+        } finally {
+            Files.deleteIfExists(tempRestore);
+        }
     }
 
     /**

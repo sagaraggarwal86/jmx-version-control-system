@@ -95,7 +95,7 @@ public final class ScmContext {
             log.info("Test plan locked by another instance — read-only mode");
         }
 
-        log.info("SCM context initialized for {} ({} versions, {})",
+        log.info("JVCS context initialized for {} ({} versions, {})",
                 jmxFile.getFileName(), versionIndex.getVersions().size(),
                 readOnly ? "read-only" : "read-write");
     }
@@ -146,7 +146,7 @@ public final class ScmContext {
         if (!readOnly) {
             lockManager.release(storageDir);
         }
-        log.debug("SCM context disposed for {}", jmxFile.getFileName());
+        log.debug("JVCS context disposed for {}", jmxFile.getFileName());
     }
 
     public Path getJmxFile() {
@@ -224,6 +224,20 @@ public final class ScmContext {
     }
 
     /**
+     * Returns true if the version count is at or above maxRetention and all non-latest versions are frozen.
+     * In this state, no versions can be pruned, so creating a new checkpoint would exceed the retention limit.
+     */
+    public boolean isAtUnprunableCapacity() {
+        if (versionIndex == null) return false;
+        int maxRetention = ScmConfigManager.getMaxRetention(versionIndex);
+        if (versionIndex.getVersions().size() < maxRetention) return false;
+        VersionEntry latest = versionIndex.getLatestVersion();
+        return versionIndex.getVersions().stream()
+                .filter(e -> latest == null || e.getVersion() != latest.getVersion())
+                .allMatch(e -> versionIndex.isPinned(e.getVersion()));
+    }
+
+    /**
      * Creates a version snapshot with the given trigger type. Resets dirty tracker if snapshot was created.
      *
      * @param trigger what caused the snapshot
@@ -279,37 +293,6 @@ public final class ScmContext {
         ensureWriteLock();
         snapshotEngine.deleteVersion(storageDir, versionIndex, versionNumber);
         AuditLogger.logDelete(storageDir, versionNumber);
-    }
-
-    /**
-     * Clears version history. Preserves kept (pinned) versions and the latest version.
-     *
-     * @return number of versions deleted
-     * @throws IOException if deletion fails
-     */
-    public int clearHistory() throws IOException {
-        checkNotDisposed();
-        ensureWriteLock();
-
-        VersionEntry latest = versionIndex.getLatestVersion();
-        List<VersionEntry> toDelete = versionIndex.getVersions().stream()
-                .filter(e -> !versionIndex.isPinned(e.getVersion()))
-                .filter(e -> latest == null || e.getVersion() != latest.getVersion())
-                .toList();
-
-        for (VersionEntry entry : toDelete) {
-            Path snapshotFile = storageDir.resolve(entry.getFile());
-            try {
-                FileOperations.deleteSnapshot(snapshotFile);
-            } catch (IOException e) {
-                log.warn("Could not delete snapshot {}: {}", entry.getFile(), e.getMessage());
-            }
-        }
-
-        versionIndex.getVersions().removeAll(toDelete);
-        indexManager.save(storageDir, versionIndex);
-        AuditLogger.logClearHistory(storageDir, toDelete.size());
-        return toDelete.size();
     }
 
     /**

@@ -174,7 +174,7 @@ public final class SettingsDialog {
         rightButtons.add(cancelBtn);
         buttonPanel.add(rightButtons, BorderLayout.EAST);
 
-        JDialog dialog = new JDialog(parent, "Settings — SCM Plugin", Dialog.ModalityType.APPLICATION_MODAL);
+        JDialog dialog = new JDialog(parent, "Settings — JVCS", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setResizable(false);
         dialog.getContentPane().setLayout(new BorderLayout());
@@ -193,14 +193,14 @@ public final class SettingsDialog {
                         if (root != null && !Files.exists(root)) {
                             JOptionPane.showMessageDialog(dialog,
                                     "Storage path root does not exist: " + root,
-                                    "SCM Plugin", JOptionPane.ERROR_MESSAGE);
+                                    "JVCS", JOptionPane.ERROR_MESSAGE);
                             return;
                         }
                     }
                 } catch (java.nio.file.InvalidPathException ex) {
                     JOptionPane.showMessageDialog(dialog,
                             "Invalid storage path: " + ex.getMessage(),
-                            "SCM Plugin", JOptionPane.ERROR_MESSAGE);
+                            "JVCS", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
             }
@@ -252,22 +252,36 @@ public final class SettingsDialog {
                     int excess = currentCount - newRetention;
                     if (excess > 0) {
                         VersionEntry latest = index.getLatestVersion();
-                        long deletableCount = index.getVersions().stream()
-                                .filter(v -> !index.isPinned(v.getVersion()))
-                                .filter(v -> latest == null || v.getVersion() != latest.getVersion())
+                        long frozenCount = index.getVersions().stream()
+                                .filter(v -> index.isPinned(v.getVersion()))
                                 .count();
-                        int willDelete = (int) Math.min(excess, deletableCount);
+                        int minRetention = (int) frozenCount + 1; // +1 for latest
+                        if (newRetention < minRetention) {
+                            JOptionPane.showMessageDialog(parent,
+                                    "Cannot reduce retention to " + newRetention + ".\n" +
+                                            "You have " + frozenCount + " frozen version(s) + 1 latest = " +
+                                            minRetention + " minimum.\n" +
+                                            "Unfreeze some versions first.",
+                                    "Retention Change", JOptionPane.WARNING_MESSAGE);
+                            newRetention = currentRetention;
+                        } else {
+                            long deletableCount = index.getVersions().stream()
+                                    .filter(v -> !index.isPinned(v.getVersion()))
+                                    .filter(v -> latest == null || v.getVersion() != latest.getVersion())
+                                    .count();
+                            int willDelete = (int) Math.min(excess, deletableCount);
 
-                        if (willDelete > 0) {
-                            int confirm = JOptionPane.showConfirmDialog(parent,
-                                    "Reducing retention to " + newRetention + " will delete " +
-                                            willDelete + " version(s).\n" +
-                                            "Kept versions and the latest version will be preserved.\n" +
-                                            "This cannot be undone. Continue?",
-                                    "Retention Change", JOptionPane.YES_NO_OPTION,
-                                    JOptionPane.WARNING_MESSAGE);
-                            if (confirm != JOptionPane.YES_OPTION) {
-                                newRetention = currentRetention;
+                            if (willDelete > 0) {
+                                int confirm = JOptionPane.showConfirmDialog(parent,
+                                        "Reducing retention to " + newRetention + " will delete " +
+                                                willDelete + " version(s).\n" +
+                                                "Frozen versions and the latest version will be preserved.\n" +
+                                                "This cannot be undone. Continue?",
+                                        "Retention Change", JOptionPane.YES_NO_OPTION,
+                                        JOptionPane.WARNING_MESSAGE);
+                                if (confirm != JOptionPane.YES_OPTION) {
+                                    newRetention = currentRetention;
+                                }
                             }
                         }
                     }
@@ -291,7 +305,7 @@ public final class SettingsDialog {
                     log.error("Failed to save settings: {}", e.getMessage(), e);
                     JOptionPane.showMessageDialog(parent,
                             "Failed to save settings: " + e.getMessage(),
-                            "SCM Plugin", JOptionPane.ERROR_MESSAGE);
+                            "JVCS", JOptionPane.ERROR_MESSAGE);
                 }
             }
 
@@ -410,7 +424,7 @@ public final class SettingsDialog {
                 JOptionPane.showMessageDialog(parent,
                         "Migrated " + migrated[0] + " file(s), " + failed[0] + " failed.\n" +
                                 "Check the old location for remaining files.",
-                        "SCM Plugin", JOptionPane.WARNING_MESSAGE);
+                        "JVCS", JOptionPane.WARNING_MESSAGE);
             } else {
                 Toast.show("Migrated " + migrated[0] + " file(s) to new location");
             }
@@ -418,7 +432,7 @@ public final class SettingsDialog {
             log.warn("Migration failed: {}", e.getMessage());
             JOptionPane.showMessageDialog(parent,
                     "Migration failed: " + e.getMessage() + "\nFiles may need manual migration.",
-                    "SCM Plugin", JOptionPane.WARNING_MESSAGE);
+                    "JVCS", JOptionPane.WARNING_MESSAGE);
         }
     }
 

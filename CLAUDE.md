@@ -69,7 +69,7 @@ one-click rollback. Single-user, local-disk operation. No Git, no SVN, no extern
 | `config`  | `ScmConfigManager` — **`user.properties` is single source of truth** for all settings. `index.json` stores per-plan data (versions, pins, retention) but NOT storage location. All getters have hardcoded defaults; deleted/blank values self-heal. Backslashes escaped for `.properties` format. |
 | `storage` | `FileOperations` (copy, atomic restore, checksum), `IndexManager` (index.json CRUD, self-heal), `LockManager` (.lock), `AuditLogger` (audit.log, 1MB rotation, STORAGE_MIGRATE/STORAGE_RESET events)                                                                                                |
 | `core`    | `ScmContext` (per-plan lifecycle, `resolveParent()`/`extractStem()` helpers), `ScmInitializer` (lazy init, singleton, toolbar), `SaveCommandWrapper` (save hook), `ScmOpenListener` (open/close/new lifecycle), `SnapshotEngine`, `DirtyTracker`, `RetentionManager`, `AutoSaveScheduler`         |
-| `ui`      | `VersionHistoryPanel` (bottom dockable), `ScmMenuCreator` (JMeter `MenuCreator` entry point, deferred startup init), `ScmMenuHandler` (Tools menu), `DirtyIndicator` (toolbar status), `CheckpointDialog` (500-char note limit), `SettingsDialog` (custom JDialog: OK/Cancel/Reset to Defaults, storage path validation, Migrate/Reset/Cancel storage dialog), `AboutDialog` (version from manifest), `Toast`, `TimeFormatUtils` |
+| `ui`      | `VersionHistoryPanel` (bottom dockable, retention warning banner), `ScmMenuCreator` (JMeter `MenuCreator` entry point, deferred startup init), `ScmMenuHandler` (Tools menu), `DirtyIndicator` (toolbar status), `CheckpointDialog` (500-char note limit, optional freeze checkbox), `SettingsDialog` (custom JDialog: OK/Cancel/Reset to Defaults, storage path validation, Migrate/Reset/Cancel storage dialog), `AboutDialog` (version from manifest), `Toast`, `TimeFormatUtils` |
 
 ### Dependency Direction (Strict)
 
@@ -121,7 +121,7 @@ No circular or upward dependencies.
   `versions[]`, `pinnedVersions`
 - **.lock**: JSON with `pid`, `hostname`, `timestamp`, `jmeterVersion`. Timestamp-based stale detection.
 - **audit.log**: JSON-lines. 1MB limit, single `.1` backup rotation. Actions: CHECKPOINT, AUTO_CHECKPOINT, RESTORE,
-  DELETE, CLEAR_HISTORY, RETENTION_PRUNE, PIN, UNPIN, EXPORT, FORCE_RELEASE_LOCK, STORAGE_MIGRATE, STORAGE_RESET.
+  DELETE, RETENTION_PRUNE, PIN, UNPIN, EXPORT, FORCE_RELEASE_LOCK, STORAGE_MIGRATE, STORAGE_RESET.
 - **Folder**: `<storageLocation>/<jmx-stem>/` per test plan, containing `index.json`, `.lock`, `<stem>_001.jmxv`, ...
 
 ### Key Constraints
@@ -129,9 +129,11 @@ No circular or upward dependencies.
 - **index.json schema is public** — field renames are breaking changes.
 - **Version file naming**: `<stem>_001.jmxv` — stem from jmx filename, `%03d` format (zero-padded to minimum 3
   digits, self-extends for versions 1000+). `FileOperations.extractStem()` is single source of truth.
-- **Retention pruning**: FIFO, oldest unpinned first. Latest always preserved.
+- **Retention pruning**: FIFO, oldest unpinned first. Latest always preserved. Pruning runs after adding new version
+  (not before), ensuring count stays at `maxRetention`. UI shows bold red warning banner when at capacity.
+  Retention floor: cannot reduce below `frozen count + 1` (latest). Settings dialog blocks with message.
 - **Freeze (pin)**: Exempt from retention pruning and bulk deletion. `isSelectable()` is the single predicate for
-  checkbox eligibility.
+  checkbox eligibility. Optional freeze checkbox in `CheckpointDialog` (default: unchecked).
 - **Delete guard**: Latest and frozen versions cannot be deleted.
 - **Selective deletion**: Header checkbox select-all + "Delete Versions" deletes only checked, non-frozen, non-latest.
 - **Restore**: Append-only. Snapshots current state (RESTORE trigger, note "Replaced by vN") before restoring.

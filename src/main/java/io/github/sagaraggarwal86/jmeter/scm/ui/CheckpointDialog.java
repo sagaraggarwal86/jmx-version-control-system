@@ -8,17 +8,22 @@ import java.awt.*;
  */
 public final class CheckpointDialog {
 
+    /**
+     * Result of the checkpoint dialog: note text and freeze preference.
+     */
+    public record CheckpointResult(String note, boolean freeze) {}
+
     private CheckpointDialog() {
         // utility class
     }
 
     /**
-     * Shows the checkpoint dialog and returns the user's note.
+     * Shows the checkpoint dialog and returns the user's note and freeze preference.
      *
      * @param parent the parent window
-     * @return the note text (may be empty), or null if cancelled
+     * @return the checkpoint result, or null if cancelled
      */
-    public static String showDialog(Window parent) {
+    public static CheckpointResult showDialog(Window parent) {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
@@ -38,12 +43,17 @@ public final class CheckpointDialog {
         });
         panel.add(noteField, BorderLayout.CENTER);
 
+        JCheckBox freezeCheckBox = new JCheckBox("Freeze this version");
+        freezeCheckBox.setToolTipText("Frozen versions are protected from retention pruning and bulk deletion");
+        panel.add(freezeCheckBox, BorderLayout.SOUTH);
+
         int result = JOptionPane.showConfirmDialog(parent, panel,
-                "Create Checkpoint — SCM Plugin",
+                "Create Checkpoint — JVCS",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
-            return noteField.getText().trim();
+            String note = noteField.getText().trim();
+            return new CheckpointResult(note.isBlank() ? null : note, freezeCheckBox.isSelected());
         }
         return null;
     }

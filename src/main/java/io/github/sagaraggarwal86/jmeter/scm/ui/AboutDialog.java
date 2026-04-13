@@ -22,7 +22,7 @@ public final class AboutDialog {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         panel.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
 
-        JLabel title = new JLabel("SCM JMeter Plugin");
+        JLabel title = new JLabel("JMX Version Control System");
         title.setFont(title.getFont().deriveFont(Font.BOLD, 16f));
         title.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(title);
@@ -57,6 +57,6 @@ public final class AboutDialog {
         panel.add(note);
 
         JOptionPane.showMessageDialog(parent, panel,
-                "About — SCM Plugin", JOptionPane.PLAIN_MESSAGE);
+                "About — JVCS", JOptionPane.PLAIN_MESSAGE);
     }
 }

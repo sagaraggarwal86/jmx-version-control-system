@@ -107,8 +107,8 @@ public final class ScmConfigManager {
                         java.util.regex.Matcher.quoteReplacement(line));
             } else {
                 // Append with SCM header if this is the first scm property
-                if (!content.contains("# SCM Plugin")) {
-                    content += "\n# SCM Plugin Settings\n";
+                if (!content.contains("# JVCS")) {
+                    content += "\n# JVCS Settings\n";
                 }
                 content += line + "\n";
             }
@@ -147,8 +147,8 @@ public final class ScmConfigManager {
             }
 
             if (toAppend.length() > 0) {
-                if (!content.contains("# SCM Plugin")) {
-                    toAppend.insert(0, "\n# SCM Plugin Settings\n" +
+                if (!content.contains("# JVCS")) {
+                    toAppend.insert(0, "\n# JVCS Settings\n" +
                             "# Recommended: Use Tools > Version Control > Settings for guided migration.\n" +
                             "#\n" +
                             "# Changing storage location via this file:\n" +

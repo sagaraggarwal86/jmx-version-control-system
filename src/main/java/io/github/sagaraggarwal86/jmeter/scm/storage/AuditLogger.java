@@ -49,10 +49,6 @@ public final class AuditLogger {
         write(storageDir, "EXPORT", Map.of("version", version, "destination", destination));
     }
 
-    public static void logClearHistory(Path storageDir, int deletedCount) {
-        write(storageDir, "CLEAR_HISTORY", Map.of("deletedCount", deletedCount));
-    }
-
     public static void logRetentionPrune(Path storageDir, int deletedCount) {
         write(storageDir, "RETENTION_PRUNE", Map.of("deletedCount", deletedCount));
     }
