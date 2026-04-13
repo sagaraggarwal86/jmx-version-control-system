@@ -9,8 +9,56 @@
     <version>0.0.1</version>
     <packaging>jar</packaging>
 
-    <name>JMX Version Control System</name>
+    <name>JMX Version Control System (JVCS)</name>
     <description>Lightweight local version control for JMeter test plans (.jmx files)</description>
+    <url>https://github.com/sagaraggarwal86/jmx-version-control-system</url>
+    <inceptionYear>2026</inceptionYear>
+
+    <!-- =============================================================
+         License
+    ============================================================= -->
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <!-- =============================================================
+         Developers
+    ============================================================= -->
+    <developers>
+        <developer>
+            <id>sagaraggarwal86</id>
+            <name>Sagar Aggarwal</name>
+            <url>https://github.com/sagaraggarwal86</url>
+            <roles>
+                <role>author</role>
+                <role>maintainer</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <!-- =============================================================
+         SCM
+    ============================================================= -->
+    <scm>
+        <connection>scm:git:git://github.com/sagaraggarwal86/jmx-version-control-system.git</connection>
+        <developerConnection>scm:git:ssh://github.com/sagaraggarwal86/jmx-version-control-system.git</developerConnection>
+        <url>https://github.com/sagaraggarwal86/jmx-version-control-system</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <!-- =============================================================
+         Distribution management
+    ============================================================= -->
+    <distributionManagement>
+        <repository>
+            <id>central</id>
+            <url>https://central.sonatype.com/api/v1/publisher/upload</url>
+        </repository>
+    </distributionManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -20,6 +68,15 @@
         <jackson.version>2.16.1</jackson.version>
         <junit.version>5.10.1</junit.version>
         <mockito.version>5.8.0</mockito.version>
+
+        <!-- ── Plugin versions ── -->
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.2.3</maven-surefire-plugin.version>
+        <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
+        <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
+        <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
+        <central-publishing-plugin.version>0.10.0</central-publishing-plugin.version>
     </properties>
 
     <dependencies>
@@ -103,4 +160,97 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- =============================================================
+         Profiles
+    ============================================================= -->
+    <profiles>
+
+        <!-- ─────────────────────────────────────────────────────────
+             release — GPG sign, attach sources + javadoc, deploy to
+             Sonatype OSSRH / Maven Central.
+             Activate with: mvn clean deploy -Prelease
+        ───────────────────────────────────────────────────────────── -->
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+
+                    <!-- Attach sources JAR (-sources.jar) -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>${maven-source-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Attach Javadoc JAR (-javadoc.jar) -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${maven-javadoc-plugin.version}</version>
+                        <configuration>
+                            <source>17</source>
+                            <encoding>UTF-8</encoding>
+                            <doclint>all,-missing</doclint>
+                            <failOnError>true</failOnError>
+                            <quiet>true</quiet>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- GPG-sign all artifacts (required by Maven Central) -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven-gpg-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <passphrase>${env.MAVEN_GPG_PASSPHRASE}</passphrase>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${central-publishing-plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+
+    </profiles>
+
 </project>
