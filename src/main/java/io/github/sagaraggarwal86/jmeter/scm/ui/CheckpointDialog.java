@@ -26,6 +26,16 @@ public final class CheckpointDialog {
         panel.add(label, BorderLayout.NORTH);
 
         JTextField noteField = new JTextField(30);
+        noteField.setDocument(new javax.swing.text.PlainDocument() {
+            @Override
+            public void insertString(int offs, String str, javax.swing.text.AttributeSet a)
+                    throws javax.swing.text.BadLocationException {
+                if (str == null) return;
+                if (getLength() + str.length() <= 500) {
+                    super.insertString(offs, str, a);
+                }
+            }
+        });
         panel.add(noteField, BorderLayout.CENTER);
 
         int result = JOptionPane.showConfirmDialog(parent, panel,

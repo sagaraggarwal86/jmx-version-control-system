@@ -69,7 +69,7 @@ one-click rollback. Single-user, local-disk operation. No Git, no SVN, no extern
 | `config`  | `ScmConfigManager` — **`user.properties` is single source of truth** for all settings. `index.json` stores per-plan data (versions, pins, retention) but NOT storage location. All getters have hardcoded defaults; deleted/blank values self-heal. Backslashes escaped for `.properties` format. |
 | `storage` | `FileOperations` (copy, atomic restore, checksum), `IndexManager` (index.json CRUD, self-heal), `LockManager` (.lock), `AuditLogger` (audit.log, 1MB rotation, STORAGE_MIGRATE/STORAGE_RESET events)                                                                                                |
 | `core`    | `ScmContext` (per-plan lifecycle, `resolveParent()`/`extractStem()` helpers), `ScmInitializer` (lazy init, singleton, toolbar), `SaveCommandWrapper` (save hook), `ScmOpenListener` (open/close/new lifecycle), `SnapshotEngine`, `DirtyTracker`, `RetentionManager`, `AutoSaveScheduler`         |
-| `ui`      | `VersionHistoryPanel` (bottom dockable), `ScmMenuHandler` (Tools menu), `DirtyIndicator` (toolbar status), `CheckpointDialog`, `SettingsDialog` (custom JDialog: OK/Cancel/Reset to Defaults, Migrate/Reset/Cancel storage dialog), `AboutDialog` (version from manifest), `Toast`                 |
+| `ui`      | `VersionHistoryPanel` (bottom dockable), `ScmMenuCreator` (JMeter `MenuCreator` entry point, deferred startup init), `ScmMenuHandler` (Tools menu), `DirtyIndicator` (toolbar status), `CheckpointDialog` (500-char note limit), `SettingsDialog` (custom JDialog: OK/Cancel/Reset to Defaults, storage path validation, Migrate/Reset/Cancel storage dialog), `AboutDialog` (version from manifest), `Toast`, `TimeFormatUtils` |
 
 ### Dependency Direction (Strict)
 
@@ -127,8 +127,8 @@ No circular or upward dependencies.
 ### Key Constraints
 
 - **index.json schema is public** — field renames are breaking changes.
-- **Version file naming**: `<stem>_001.jmxv` — stem from jmx filename, zero-padded to 3 digits.
-  `FileOperations.extractStem()` is single source of truth.
+- **Version file naming**: `<stem>_001.jmxv` — stem from jmx filename, `%03d` format (zero-padded to minimum 3
+  digits, self-extends for versions 1000+). `FileOperations.extractStem()` is single source of truth.
 - **Retention pruning**: FIFO, oldest unpinned first. Latest always preserved.
 - **Freeze (pin)**: Exempt from retention pruning and bulk deletion. `isSelectable()` is the single predicate for
   checkbox eligibility.

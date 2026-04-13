@@ -183,6 +183,27 @@ public final class SettingsDialog {
 
         boolean[] confirmed = {false};
         okBtn.addActionListener(ev -> {
+            // Validate storage path before accepting
+            String storageVal = storageField.getText().trim();
+            if (!storageVal.isBlank()) {
+                try {
+                    Path testPath = Path.of(storageVal);
+                    if (testPath.isAbsolute()) {
+                        Path root = testPath.getRoot();
+                        if (root != null && !Files.exists(root)) {
+                            JOptionPane.showMessageDialog(dialog,
+                                    "Storage path root does not exist: " + root,
+                                    "SCM Plugin", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                    }
+                } catch (java.nio.file.InvalidPathException ex) {
+                    JOptionPane.showMessageDialog(dialog,
+                            "Invalid storage path: " + ex.getMessage(),
+                            "SCM Plugin", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            }
             confirmed[0] = true;
             dialog.dispose();
         });
