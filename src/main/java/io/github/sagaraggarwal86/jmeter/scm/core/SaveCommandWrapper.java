@@ -27,7 +27,7 @@ public final class SaveCommandWrapper implements Command {
         try {
             ScmInitializer.getInstance().ensureInitializedWithContext();
         } catch (Throwable t) {
-            log.error("SCM Plugin bootstrap failed: {}", t.getMessage(), t);
+            log.error("JVCS bootstrap failed: {}", t.getMessage(), t);
         }
     }
 

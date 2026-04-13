@@ -58,6 +58,11 @@ public final class AutoSaveScheduler {
             return;
         }
 
+        if (ctx.isAtUnprunableCapacity()) {
+            log.debug("Auto-checkpoint skipped — at unprunable capacity");
+            return;
+        }
+
         if (!running.compareAndSet(false, true)) {
             log.debug("Auto-checkpoint still in progress — skipping this tick");
             return;

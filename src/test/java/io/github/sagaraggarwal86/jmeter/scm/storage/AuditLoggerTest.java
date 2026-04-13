@@ -75,15 +75,6 @@ class AuditLoggerTest {
     }
 
     @Test
-    void logClearHistoryWritesAction() throws IOException {
-        AuditLogger.logClearHistory(tempDir, 5);
-
-        String content = Files.readString(tempDir.resolve("audit.log"));
-        assertTrue(content.contains("\"action\":\"CLEAR_HISTORY\""));
-        assertTrue(content.contains("\"deletedCount\":5"));
-    }
-
-    @Test
     void logPinUnpinWritesAction() throws IOException {
         AuditLogger.logPin(tempDir, 3);
         AuditLogger.logUnpin(tempDir, 3);

@@ -2,6 +2,7 @@ package io.github.sagaraggarwal86.jmeter.scm.ui;
 
 import io.github.sagaraggarwal86.jmeter.scm.core.ScmContext;
 import io.github.sagaraggarwal86.jmeter.scm.core.ScmInitializer;
+import io.github.sagaraggarwal86.jmeter.scm.storage.AuditLogger;
 import org.apache.jmeter.gui.GuiPackage;
 import org.apache.jmeter.gui.action.ActionNames;
 import org.apache.jmeter.gui.action.ActionRouter;
@@ -42,7 +43,7 @@ public final class ScmMenuHandler {
         if (context == null || context.isDisposed() || context.isReadOnly()) {
             JOptionPane.showMessageDialog(getParentWindow(),
                     "No active test plan or read-only mode.",
-                    "SCM Plugin", JOptionPane.WARNING_MESSAGE);
+                    "JVCS", JOptionPane.WARNING_MESSAGE);
             return null;
         }
         return context;
@@ -126,7 +127,7 @@ public final class ScmMenuHandler {
         if (context == null || context.isDisposed()) {
             JOptionPane.showMessageDialog(getParentWindow(),
                     "No active test plan.",
-                    "SCM Plugin", JOptionPane.WARNING_MESSAGE);
+                    "JVCS", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -136,7 +137,7 @@ public final class ScmMenuHandler {
             if (wasReadWrite) {
                 JOptionPane.showMessageDialog(getParentWindow(),
                         "You already hold the lock.",
-                        "SCM Plugin", JOptionPane.INFORMATION_MESSAGE);
+                        "JVCS", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 initializer.notifyVersionsChanged();
                 Toast.show("Lock acquired — read-write mode restored");
@@ -173,7 +174,7 @@ public final class ScmMenuHandler {
         } else {
             JOptionPane.showMessageDialog(getParentWindow(),
                     "Failed to acquire the lock.",
-                    "SCM Plugin", JOptionPane.ERROR_MESSAGE);
+                    "JVCS", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -184,8 +185,16 @@ public final class ScmMenuHandler {
         var context = getWritableContext(initializer);
         if (context == null) return;
 
-        String note = CheckpointDialog.showDialog(getParentWindow());
-        if (note == null) return;
+        if (context.isAtUnprunableCapacity()) {
+            JOptionPane.showMessageDialog(getParentWindow(),
+                    "Cannot create checkpoint — at retention limit and all versions are frozen.\n" +
+                            "Increase retention or unfreeze a version in Settings.",
+                    "JVCS", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        CheckpointDialog.CheckpointResult cpResult = CheckpointDialog.showDialog(getParentWindow());
+        if (cpResult == null) return;
 
         // Save in-memory state to disk first, so the checkpoint captures current changes
         try {
@@ -198,7 +207,12 @@ public final class ScmMenuHandler {
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
             @Override
             protected Void doInBackground() throws Exception {
-                context.createCheckpoint(note.isBlank() ? null : note);
+                var entry = context.createCheckpoint(cpResult.note());
+                if (entry != null && cpResult.freeze()) {
+                    context.getVersionIndex().pin(entry.getVersion());
+                    context.getIndexManager().save(context.getStorageDir(), context.getVersionIndex());
+                    AuditLogger.logPin(context.getStorageDir(), entry.getVersion());
+                }
                 return null;
             }
 
@@ -207,14 +221,14 @@ public final class ScmMenuHandler {
                 try {
                     get();
                     initializer.notifyVersionsChanged();
-                    Toast.show("Checkpoint created");
+                    Toast.show("Checkpoint created" + (cpResult.freeze() ? " (frozen)" : ""));
                 } catch (Exception ex) {
                     Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
                     log.warn("Checkpoint failed: {}", cause.getMessage());
                     initializer.notifyVersionsChanged();
                     JOptionPane.showMessageDialog(getParentWindow(),
                             "Checkpoint failed: " + cause.getMessage(),
-                            "SCM Plugin", JOptionPane.WARNING_MESSAGE);
+                            "JVCS", JOptionPane.WARNING_MESSAGE);
                 }
             }
         };

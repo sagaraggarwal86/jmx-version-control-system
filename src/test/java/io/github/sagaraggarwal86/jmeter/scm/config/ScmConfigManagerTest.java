@@ -186,7 +186,7 @@ class ScmConfigManagerTest {
         ScmConfigManager.setAndPersist("scm.storage.location", ".history");
 
         String content = Files.readString(userPropsFile);
-        assertTrue(content.contains("# SCM Plugin"));
+        assertTrue(content.contains("# JVCS"));
     }
 
     // --- ensureDefaultsPersisted ---

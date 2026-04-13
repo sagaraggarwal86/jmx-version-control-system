@@ -50,7 +50,7 @@ public final class ScmInitializer {
                 ctx.dispose();
                 log.debug("Lock released via shutdown hook");
             }
-        }, "SCM-ShutdownHook"));
+        }, "JVCS-ShutdownHook"));
     }
 
     /**
@@ -117,14 +117,14 @@ public final class ScmInitializer {
                         lockDetails;
                 SwingUtilities.invokeLater(() ->
                         JOptionPane.showMessageDialog(null, msg,
-                                "SCM Plugin — Read-Only Mode", JOptionPane.INFORMATION_MESSAGE));
+                                "JVCS — Read-Only Mode", JOptionPane.INFORMATION_MESSAGE));
             }
         } catch (Exception e) {
             log.error("Failed to initialize SCM for {}: {}", jmxFile, e.getMessage(), e);
             SwingUtilities.invokeLater(() ->
                     JOptionPane.showMessageDialog(null,
-                            "SCM Plugin initialization failed: " + e.getMessage(),
-                            "SCM Plugin", JOptionPane.ERROR_MESSAGE));
+                            "JVCS initialization failed: " + e.getMessage(),
+                            "JVCS", JOptionPane.ERROR_MESSAGE));
         }
     }
 
@@ -173,7 +173,7 @@ public final class ScmInitializer {
             currentContext.dispose();
             currentContext = null;
             notifyVersionsChanged();
-            log.info("SCM context disposed (file closed)");
+            log.info("JVCS context disposed (file closed)");
         }
     }
 
@@ -186,7 +186,7 @@ public final class ScmInitializer {
      */
     public void ensureInitialized() {
         if (uiInstalled) return;
-        log.info("SCM Plugin bootstrapping");
+        log.info("JVCS bootstrapping");
         ScmConfigManager.ensureDefaultsPersisted();
         installUi();
     }
@@ -235,7 +235,7 @@ public final class ScmInitializer {
         }
 
         uiInstalled = true;
-        log.info("SCM Plugin UI installed");
+        log.info("JVCS UI installed");
     }
 
     private void installKeyBindings() {

@@ -30,7 +30,7 @@ public final class ScmOpenListener implements Command {
             try {
                 ScmInitializer.getInstance().ensureInitializedWithContext();
             } catch (Throwable t) {
-                log.error("SCM Plugin lifecycle failed: {}", t.getMessage(), t);
+                log.error("JVCS lifecycle failed: {}", t.getMessage(), t);
             }
         });
     }

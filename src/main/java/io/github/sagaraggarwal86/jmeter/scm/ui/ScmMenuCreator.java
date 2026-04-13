@@ -17,7 +17,7 @@ public final class ScmMenuCreator implements MenuCreator {
     private static final Logger log = LoggerFactory.getLogger(ScmMenuCreator.class);
 
     public ScmMenuCreator() {
-        log.info("SCM Plugin discovered by JMeter");
+        log.info("JVCS discovered by JMeter");
 
         // Deferred auto-init: catches files loaded at startup (CLI -t or last-used auto-open).
         // No OPEN action fires for these — this invokeLater runs after the startup file load completes.
