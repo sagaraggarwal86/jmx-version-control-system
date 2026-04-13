@@ -25,7 +25,7 @@ jobs:
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
       - name: Set release version in POM
-        run: mvn --batch-mode versions:set -DnewVersion="${GITHUB_REF_NAME#v}" -DgenerateBackupPoms=false
+        run: mvn --batch-mode versions:set -DnewVersion="${GITHUB_REF_NAME#}" -DgenerateBackupPoms=false
 
       - name: Verify before release
         run: mvn --batch-mode clean verify "-Dgpg.skip=true"
