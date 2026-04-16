@@ -1,178 +1,160 @@
 # CLAUDE.md
 
-## Prohibitions [STRICT]
+## Rules
 
-- Target **JMeter 5.6.3** exclusively — verify all APIs exist in 5.6.3 before using them
-- Never change git history or Java 17 implementation
-- Never assume — ask if in doubt
-- Never make changes to code until user confirms
-- Never change existing functionality or make changes beyond confirmed scope
-- Only recommend alternatives when there is a concrete risk or significant benefit
-- Analyze impact across dependent layers (storage → core → ui) before proposing changes
-- Conflicting requirements: flag the conflict, pause, and wait for decision
-- Decision priority: **Correctness → Security → Performance → Readability → Simplicity**
+**Behavioral**
+- Never assume — ask if in doubt.
+- Never edit code until the user confirms.
+- Never expand scope beyond what was confirmed.
+- Recommend alternatives only when there is a concrete risk or significant benefit.
+- On conflicting requirements: flag, pause, wait for decision.
+- On obstacles: fix the root cause, not the symptom. Never bypass safety checks (`--no-verify`, `git reset --hard`, disabling tests).
 
-## Workflow
+**Technical**
+- Target JMeter 5.6.3 exclusively. Verify every API exists in 5.6.3 before using it.
+- Java 17, Maven 3.8+. Do not change these targets.
+- Do not rewrite git history.
+- Decision priority: **Correctness → Security → Performance → Readability → Simplicity**.
+- Before proposing changes, trace impact along the dependency direction (see Architecture).
 
-- Interactive session — present choices one by one, unless changes are trivial and clearly scoped
-- If my choices severely impact application integrity or cause excessive changes, briefly explain consequences and
-  recommend better alternatives
-- After all changes are finalized, self-check for regressions, naming consistency, and adherence to these rules
-- Multi-file changes: present all files together with dependency order noted
-- Rollback: revert to last explicitly approved file set, then ask how to proceed
-- If context grows large, summarize confirmed state before continuing
+## Workflow & Communication
 
-## Response Style
-
-- Concise — no filler phrases, no restating the request, no vague or over-explanatory content
-
-## Communication
-
-- Always provide honest feedback — flag risks, trade-offs, or better alternatives even if the user didn't ask.
-  Do not agree silently if there is a concrete concern. Be direct, not diplomatic.
-- For every decision point or design choice, present options in a concise table:
+- Interactive — present choices one at a time unless trivial and clearly scoped.
+- Multi-file changes: present all files together, note dependency order.
+- Rollback: revert to the last explicitly approved file set, then ask.
+- After changes: self-check for regressions, naming consistency, and rule adherence.
+- Summarize confirmed state if context grows large; suggest `/compact` proactively.
+- Responses: concise. No filler, no restating the request.
+- Feedback: direct, not diplomatic. Flag concrete concerns even when not asked.
+- For every decision point, present a table and highlight the recommendation:
 
   | Option | Risk | Effort | Impact | Recommendation |
-        |--------|------|--------|--------|----------------|
+  |--------|------|--------|--------|----------------|
 
-  Highlight the recommended option. Keep descriptions brief — one line per cell.
+## Environment
 
-## Self-Maintenance
+- JDK 17, Maven 3.8+. All runtime deps `provided` (JMeter + Jackson on JMeter classpath). Thin JAR, no shading.
+- Test stack: JUnit 5.10.1 + Mockito 5.8.0. Jackson 2.16.1.
+- Shell: bash on Windows (Unix syntax — `/dev/null`, forward slashes). `find`/`grep` via Bash tool are fork-unstable; use Glob/Grep tools instead.
+- UI changes cannot be exercised without a live JMeter runtime — say so explicitly rather than claiming success.
+- R-tags (R1–R9) in source comments reference an internal requirements doc not in this repo. Preserve existing tags; do not invent new ones.
 
-- **Auto-optimize CLAUDE.md**: After any session that modifies design decisions or architecture, review for redundancy
-  and stale entries. Every line must carry actionable information.
-- **Auto-compact**: Proactively suggest `/compact` before context becomes unwieldy.
-- **Auto-update README.md**: After feature changes, keep README feature tables and config sections current.
-
-## Build Commands
+## Build & Coverage
 
 ```bash
-mvn clean verify                          # Build + tests + JaCoCo coverage check
+mvn clean verify                          # Build + tests + JaCoCo gate
 mvn clean package -DskipTests             # Build only
 mvn test -Dtest=SomeTestClass             # Single test class
 mvn test -Dtest=SomeTestClass#testMethod  # Single test method
-mvn clean deploy -Prelease                # Release to Maven Central (GPG + sources + javadoc)
+mvn clean deploy -Prelease                # Release to Maven Central
 ```
 
-Requirements: JDK 17 only, Maven 3.8+.
-
-### Test Coverage
-
-- **JaCoCo enforces ≥85% line coverage** on testable code (`verify` phase)
-- **Excluded from enforcement**: `ui/**` (Swing), `ScmInitializer`, `AutoSaveScheduler`, `SaveCommandWrapper`,
-  `ScmOpenListener` — all require live JMeter runtime
-- Coverage report: `target/site/jacoco/index.html`
+- JaCoCo gate: ≥85% line coverage on testable code (`verify` phase).
+- Excluded from the gate (require live JMeter runtime): `ui/**`, `ScmInitializer`, `AutoSaveScheduler`, `SaveCommandWrapper`, `ScmOpenListener`. Tests may still exist for these; they just don't enforce the threshold.
+- Report: `target/site/jacoco/index.html`.
 
 ## Architecture
 
-Lightweight local version control for JMeter test plans (.jmx files). Auto-snapshots on save, linear version history,
-one-click rollback. Single-user, local-disk operation. No Git, no SVN, no external tools.
+Lightweight local version control for JMeter `.jmx` test plans. Auto-snapshots on save, linear history, one-click rollback. Single-user, local-disk. Pure additive: never modifies or removes JMeter behavior; all reflection has graceful fallback.
 
-### Package Structure
+**Dependency direction (strict, no cycles):** `ui → core → storage → model`, and `core → config`.
 
-| Package   | Key Classes                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-|-----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `model`   | `VersionEntry`, `VersionIndex` (unmodifiable collection getters, explicit mutation methods), `TriggerType` (CHECKPOINT, AUTO_CHECKPOINT, RESTORE), `LockInfo`                                                                                                                                                                                                                                                                                                                        |
-| `config`  | `ScmConfigManager` — **`user.properties` is single source of truth** for all settings. `index.json` stores per-plan data (versions, pins, retention) but NOT storage location. All getters have hardcoded defaults; deleted/blank values self-heal. Property detection uses line-anchored `Pattern.find()` with `Pattern.quote()`.                                                                                                                                                   |
-| `storage` | `FileOperations` (copy, atomic restore, checksum), `IndexManager` (index.json CRUD, self-heal, schema version validation), `LockManager` (.lock, hostname+PID ownership), `AuditLogger` (audit.log, 1MB rotation)                                                                                                                                                                                                                                                                    |
-| `core`    | `ScmContext` (per-plan lifecycle, volatile `readOnly`/`disposed`), `ScmInitializer` (lazy init, singleton, toolbar), `SaveCommandWrapper` (save hook), `ScmOpenListener` (open/close/new lifecycle), `SnapshotEngine` (checksum outside lock), `DirtyTracker` (lazy checksum init), `RetentionManager` (preserves index/disk sync on delete failure), `AutoSaveScheduler` (cancellable worker)                                                                                       |
-| `ui`      | `VersionHistoryPanel` (bottom dockable, retention warning banner), `ScmMenuCreator` (JMeter `MenuCreator` entry point, deferred startup init), `ScmMenuHandler` (Tools menu), `DirtyIndicator` (toolbar status), `CheckpointDialog` (500-char note limit, optional freeze checkbox), `SettingsDialog` (custom JDialog: OK/Cancel/Reset to Defaults, storage path validation, Migrate/Reset/Cancel storage dialog), `AboutDialog` (version from manifest), `Toast`, `TimeFormatUtils` |
+### Class inventory
 
-### Dependency Direction (Strict)
+| Class | Package | Responsibility |
+|-------|---------|----------------|
+| `VersionEntry` | model | Single version record: number, file, timestamp, trigger, note, SHA-256. |
+| `VersionIndex` | model | Root index. Returns `Collections.unmodifiable*` views; mutation only via `addVersion`, `removeVersionAt`, `removeVersion`, `removeVersions`, `addAllVersions`, `pin`, `unpin`. |
+| `TriggerType` | model | `CHECKPOINT`, `AUTO_CHECKPOINT`, `RESTORE`. |
+| `LockInfo` | model | Lock marker: `pid`, `hostname`, `timestamp`, `jmeterVersion`. |
+| `ScmConfigManager` | config | Reads/writes `user.properties`. All getters self-heal (defaults on blank/missing). Property detection: line-anchored `Pattern.find()` with `Pattern.quote()`. |
+| `FileOperations` | storage | Atomic copy/restore (temp + `Files.move(ATOMIC_MOVE)`), SHA-256, `extractStem()` (single source of truth for naming). |
+| `IndexManager` | storage | `index.json` CRUD. Self-heal: parse failure → `.bak` + rebuild from `.jmxv` filenames. Validates `schemaVersion`. |
+| `LockManager` | storage | Application-level lock (no `FileLock`). Ownership = hostname + PID. Timestamp-based stale detection. |
+| `AuditLogger` | storage | JSON-lines `audit.log`, 1 MB rotation to `.1`. |
+| `ScmContext` | core | Per-plan lifecycle. `volatile readOnly`/`disposed`. Disposed on new-open to prevent state leaks. |
+| `SnapshotEngine` | core | Create/restore/delete. SHA-256 computed **outside** `synchronized(index)`. Dedup only for `AUTO_CHECKPOINT`. |
+| `RetentionManager` | core | FIFO pruning after add. Skips pinned + latest. Delete failure → skip index removal (keeps disk/index in sync). |
+| `DirtyTracker` | core | Hybrid flag + on-demand SHA-256. Checksum init deferred to `ScmContext.initialize()` via `reset()` (avoids blocking EDT). |
+| `AutoSaveScheduler` | core | Cancellable `SwingWorker`; tracked and cancelled on `stop()`. |
+| `ScmInitializer` | core | Singleton, lazy init, toolbar wiring. |
+| `SaveCommandWrapper` | core | `ActionRouter` SAVE hook wrapped in `try-catch(Throwable)` — native save must never be blocked. |
+| `ScmOpenListener` | core | OPEN / SUB_TREE_LOADED / CLOSE. Deferred `ensureInitializedWithContext()` via `invokeLater`. `testPlanFile == null` → dispose. |
+| `VersionHistoryPanel` | ui | Bottom-dockable JTable. Retention-capacity warning banner. `JTable.getToolTipText(MouseEvent)` override for per-cell tooltips. |
+| `ScmMenuCreator` | ui | JMeter `MenuCreator` entry point; deferred startup init. |
+| `ScmMenuHandler` | ui | Tools menu submenu. |
+| `DirtyIndicator` | ui | Toolbar status badge. |
+| `CheckpointDialog` | ui | 500-char note limit, optional freeze checkbox (default unchecked). |
+| `SettingsDialog` | ui | Custom `JDialog`: OK / Cancel / Reset to Defaults. Storage path validation. Storage change → Migrate/Reset/Cancel. |
+| `AboutDialog` | ui | Version from JAR manifest. |
+| `Toast`, `TimeFormatUtils` | ui | Transient notifications; time formatting. |
 
-```
-ui → core → storage → model
-              ↑
-            config
-```
+### Design decisions
 
-No circular or upward dependencies.
+- **Save Hook Isolation**: post-save wrapped in `try-catch(Throwable)`.
+- **Atomic Writes**: all writes use temp + `Files.move(ATOMIC_MOVE)`.
+- **Snapshot Dedup**: SHA-256 outside the index lock. `AUTO_CHECKPOINT` dedups; `CHECKPOINT` and `RESTORE` always create.
+- **Self-Healing**: corrupt `index.json` → `.bak` + rebuild from disk. `schemaVersion != 1` logs a warning.
+- **Existence-Only Validation**: `Files.exists()` per entry; no file reads. Sub-millisecond.
+- **Monotonic Version Numbers**: never reset, even after retention pruning.
+- **Per-Plan Lifecycle**: `ScmContext` is per-`.jmx`. Dispose previous on new-open.
+- **Thread Safety**: `volatile` flags for cross-thread visibility; UI updates via `SwingUtilities.invokeLater`.
+- **Config Self-Heal**: deleted `user.properties` → `ensureDefaultsPersisted()` recreates with manual-migration instructions.
+- **Post-Restore Normalization**: save + `DirtyTracker.reset()` after reload. Restore note: `"Replaced by vN"`.
 
-### Core Design Decisions
+### Integration points (reflection)
 
-- **Save Hook Isolation (R3)**: Entire post-save call in `try-catch(Throwable)`. Native save must never be blocked.
-- **Atomic Writes (R4, R6)**: All file writes use temp + `Files.move(ATOMIC_MOVE)` pattern. Prevents corruption.
-- **Snapshot Deduplication (R8)**: SHA-256 checksum computed **outside** `synchronized(index)` to avoid holding lock
-  during I/O. Only `AUTO_CHECKPOINT` deduplicates. `CHECKPOINT` and `RESTORE` always create.
-- **Self-Healing (R2)**: index.json parse failure → rename to `.bak`, rebuild from `.jmxv` filenames on disk.
-  Schema version validated on load (warn if != 1).
-- **Existence-Only Validation (R7)**: `Files.exists()` per entry — no file reads. Sub-millisecond.
-- **Version Numbers Never Reset (R9)**: Global, monotonically incrementing. Even after retention pruning.
-- **ScmContext Lifecycle (R1)**: Per-test-plan state object. Dispose previous on new open. Prevents state leaks.
-- **Thread Safety**: `readOnly`/`disposed` are `volatile` for cross-thread visibility.
-  `VersionIndex` returns `Collections.unmodifiable*` views; mutation only via explicit methods.
-  `AutoSaveScheduler` tracks active `SwingWorker` and cancels on `stop()`. UI updates via `SwingUtilities.invokeLater`.
-- **DirtyTracker Lazy Init**: Checksum deferred from constructor to `ScmContext.initialize()` via `reset()`.
-  Avoids blocking EDT with SHA-256 I/O during context creation.
-- **Retention Integrity**: File delete failure during pruning skips index removal (keeps index/disk in sync).
-  Orphaned entries are preferable to orphaned files.
-- **Lock Ownership**: Hostname + PID (not PID alone). Hostname resolved once at class load. Prevents false ownership
-  match across machines sharing storage.
-- **Post-Restore Normalization**: Save + dirty tracker reset after reload. Restore note: "Replaced by vN".
-- **Config Self-Heal**: All config getters have defaults. Deleted `user.properties` → `ensureDefaultsPersisted()`
-  recreates. Blank values → default kicks in.
-- **All runtime deps `provided`**: JMeter core, Jackson on JMeter classpath. Thin JAR, no shading.
-- **Pure additive**: Never modifies or removes JMeter behavior. All reflection with graceful fallback.
+| Touchpoint | What | Failure mode |
+|------------|------|--------------|
+| `ActionRouter` SAVE hook | Wrap `ActionNames.SAVE` | Caught; native save works |
+| `MainFrame` toolbar | Insert 5 buttons (C, H, I, L, D) + separator | Toolbar absent; JMeter functional |
+| `MainFrame` bottom panel | Access `JSplitPane` | Fallback to content pane; JMeter functional |
+| `JMenuBar` Tools menu | Append Version Control submenu | Menu absent; JMeter functional |
 
-### JMeter Integration Points (4 reflection touchpoints)
+### Lifecycle hooks
 
-| Touchpoint               | What                                     | Failure                                     |
-|--------------------------|------------------------------------------|---------------------------------------------|
-| `ActionRouter` save hook | Wrap `ActionNames.SAVE`                  | `try-catch(Throwable)`: native save works   |
-| `MainFrame` toolbar      | Insert 5 buttons (C,H,I,L,D) + separator | Toolbar absent. JMeter functional           |
-| `MainFrame` bottom panel | Access `JSplitPane`                      | Fallback to content pane. JMeter functional |
-| `JMenuBar` Tools menu    | Append Version Control submenu           | Menu absent. JMeter functional              |
+| Action | Handler | Behavior |
+|--------|---------|----------|
+| SAVE | `SaveCommandWrapper` | Bootstrap plugin, `ensureInitializedWithContext()` |
+| OPEN / SUB_TREE_LOADED | `ScmOpenListener` | Deferred `ensureInitializedWithContext()` via `invokeLater` |
+| CLOSE (File > New) | `ScmOpenListener` | Same deferred call. `testPlanFile == null` → dispose. Cancel-on-save safe. |
 
-### Lifecycle Hooks
+### Storage schema
 
-| Action                 | Handler              | Behavior                                                                             |
-|------------------------|----------------------|--------------------------------------------------------------------------------------|
-| SAVE                   | `SaveCommandWrapper` | Bootstrap plugin, `ensureInitializedWithContext()`                                   |
-| OPEN / SUB_TREE_LOADED | `ScmOpenListener`    | Deferred `ensureInitializedWithContext()` via `invokeLater`                          |
-| CLOSE (File > New)     | `ScmOpenListener`    | Same deferred call — `testPlanFile == null` → disposes context. Cancel-on-save safe. |
+- **Folder**: `<storageLocation>/<jmx-stem>/` per plan. Contains `index.json`, `.lock`, `<stem>_NNN.jmxv`.
+- **index.json**: `schemaVersion: 1`, `maxRetention`, `storageLocation` (record-only — not used for resolution), `versions[]`, `pinnedVersions`.
+- **.lock**: JSON (`pid`, `hostname`, `timestamp`, `jmeterVersion`).
+- **audit.log**: JSON-lines, 1 MB rotation, single `.1` backup. Actions: `CHECKPOINT`, `AUTO_CHECKPOINT`, `RESTORE`, `DELETE`, `RETENTION_PRUNE`, `PIN`, `UNPIN`, `EXPORT`, `FORCE_RELEASE_LOCK`, `STORAGE_MIGRATE`, `STORAGE_RESET`.
+- **Version file naming**: `<stem>_001.jmxv` — `%03d`, self-extends for ≥1000.
 
-### Storage Schema
+## Enforced invariants (do not violate)
 
-- **index.json**: `schemaVersion: 1` (validated on load), `maxRetention`, `storageLocation` (record only, not used
-  for resolution), `versions[]`, `pinnedVersions`
-- **.lock**: JSON with `pid`, `hostname`, `timestamp`, `jmeterVersion`. Ownership = hostname + PID match.
-  Timestamp-based stale detection.
-- **audit.log**: JSON-lines. 1MB limit, single `.1` backup rotation. Actions: CHECKPOINT, AUTO_CHECKPOINT, RESTORE,
-  DELETE, RETENTION_PRUNE, PIN, UNPIN, EXPORT, FORCE_RELEASE_LOCK, STORAGE_MIGRATE, STORAGE_RESET.
-- **Folder**: `<storageLocation>/<jmx-stem>/` per test plan, containing `index.json`, `.lock`, `<stem>_001.jmxv`, ...
+- **`index.json` schema is public** — field renames are breaking changes. Bump `schemaVersion` if structure changes.
+- **Storage location SSoT is `user.properties`** — `index.json.storageLocation` is a record, not a resolver. Runtime change requires restart; no hot-reload.
+- **Retention floor**: cannot reduce below `frozen count + 1` (latest always preserved). Settings dialog must block with a message.
+- **Delete guard**: latest and frozen versions cannot be deleted. `isSelectable()` is the single predicate for checkbox eligibility.
+- **Restore safety**: append-only. Snapshot current state (RESTORE, note `"Replaced by vN"`) before restoring. Target copied to temp before auto-snapshot to survive pruning. Blocked at unprunable capacity (`isAtUnprunableCapacity()`).
+- **Lock**: hostname + PID ownership (hostname resolved once at class load). `ensureWriteLock()` on every write op. L button: verify → polite acquire → force release with confirmation.
+- **Missing snapshots**: `refresh()` detects via `Files.exists()`, disables Restore/Export with tooltip, WARN log. Delete cleans orphaned entries.
+- **Storage migration**: GUI change → Migrate/Reset/Cancel. Migrate = dispose → move → reinit. Reset = zip old files to `<stem>_backup_<yyyyMMdd_HHmmss>.zip` in parent, delete originals, start fresh. Partial failures handled per file.
+- **Export**: default filename `<jmx-name>_v<N>.jmx`, filter `"JMeter (.jmx)"`.
+- **Read-only lock dialog**: shows hostname, PID, timestamp from `.lock`.
 
-### Key Constraints
+## Self-Maintenance
 
-- **index.json schema is public** — field renames are breaking changes. Schema version validated on load.
-- **VersionIndex collections**: `getVersions()` and `getPinnedVersions()` return unmodifiable views. All mutations
-  through explicit methods (`addVersion`, `removeVersionAt`, `removeVersion`, `removeVersions`, `addAllVersions`,
-  `pin`, `unpin`).
-- **Version file naming**: `<stem>_001.jmxv` — stem from jmx filename, `%03d` format (zero-padded to minimum 3
-  digits, self-extends for versions 1000+). `FileOperations.extractStem()` is single source of truth.
-- **Retention pruning**: FIFO, oldest unpinned first. Latest always preserved. Pruning runs after adding new version
-  (not before), ensuring count stays at `maxRetention`. File delete failure skips index removal to maintain sync.
-  UI shows bold red warning banner when at capacity.
-  Retention floor: cannot reduce below `frozen count + 1` (latest). Settings dialog blocks with message.
-- **Freeze (pin)**: Exempt from retention pruning and bulk deletion. `isSelectable()` is the single predicate for
-  checkbox eligibility. Optional freeze checkbox in `CheckpointDialog` (default: unchecked).
-- **Delete guard**: Latest and frozen versions cannot be deleted.
-- **Selective deletion**: Header checkbox select-all + "Delete Versions" deletes only checked, non-frozen, non-latest.
-- **Restore**: Append-only. Snapshots current state (RESTORE trigger, note "Replaced by vN") before restoring.
-  Target copied to temp before auto-snapshot to survive pruning. Blocked at unprunable capacity
-  (`isAtUnprunableCapacity()`) — same guard as checkpoint and auto-checkpoint.
-- **Lock**: Application-level (no `FileLock`). Ownership = hostname + PID. Dual-purpose L button: verify ownership →
-  polite acquire → force release with confirmation. `ensureWriteLock()` on every write op. Dynamic tooltip reflects
-  state.
-- **Missing snapshots**: `refresh()` detects via `Files.exists()`, disables Restore/Export with tooltip. Delete cleans
-  orphaned entries. WARN log level.
-- **Swing tooltips**: `JTable.getToolTipText(MouseEvent)` override — renderer-level tooltips don't receive mouse events.
-- **Toolbar**: C, H, I, L, D. Visibility togglable in Settings. Sized to match native JMeter buttons.
-- **Storage location**: `user.properties` is single source of truth (not index.json). Supports relative (to .jmx) or
-  absolute paths. Backslashes escaped in `.properties`. Browse button in Settings. GUI change triggers
-  Migrate/Reset/Cancel dialog: Migrate moves files (dispose → move → reinit), Reset backs up old files to
-  `<stem>_backup_<yyyyMMdd_HHmmss>.zip` in parent dir then deletes originals and starts fresh, Cancel reverts.
-  user.properties change takes effect on restart only — no runtime detection. Partial migration failures handled
-  per-file. `ensureDefaultsPersisted()` writes step-by-step manual migration instructions to user.properties.
-- **Read-only lock dialog**: Shows hostname, PID, and timestamp from `.lock` file when another instance holds the lock.
-- **File > New**: Deferred `ensureInitializedWithContext()` for all lifecycle actions. Cancel-on-save preserves context.
-- **Export**: Default filename `<jmx-name>_v<N>.jmx`, file filter "JMeter (.jmx)".
+- **Ownership split**: `CLAUDE.md` = rules and context for Claude. `README.md` = user-facing features, install, config. When both need updating, change each in its own lane — do not duplicate content across files.
+- **Auto-update CLAUDE.md**: after a session that changes design, architecture, invariants, or class responsibilities, review this file in the same session. Remove stale entries, dedupe, confirm every line still carries actionable information. After the update, perform **one** re-review pass (not recursive) and verify **100% accuracy** (every claim matches current code), **100% optimization** (no line can be tightened further), **0% redundancy** (no fact stated more than once).
+- **Auto-update README.md**: after feature changes, keep README feature tables and config sections current. Apply the README update rules below.
+- **Auto-compact**: suggest `/compact` before context becomes unwieldy.
+
+### README update rules
+
+When editing `README.md`, every change must satisfy:
+
+1. **User-benefit framing** — describe features by what they do *for the user*, not by internal mechanics. Architectural terms ("pure additive", "self-healing", "reflection touchpoint") stay in CLAUDE.md.
+2. **Features table = summary only** — one short line per feature. Defaults, config keys, keyboard shortcuts, and button names live only in Configuration / GUI Overview sections.
+3. **Cross-platform shell blocks** — any command involving paths or env vars must show Linux/macOS, Windows PowerShell, and Windows cmd.
+4. **Concrete paths for user actions** — when the user must open or edit a file, give the absolute path on each supported OS.
+5. **Self-updating references over hardcoded strings** — prefer Maven Central / release badges to literal version numbers.
+6. **Link CLAUDE.md, do not duplicate** — architecture, design decisions, and invariants live only in CLAUDE.md. README links to it from Contributing.
+7. **Explicit auto-behavior** — when documenting auto-activation, auto-recovery, or auto-snapshot, state what is created and where.
