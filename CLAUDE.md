@@ -158,7 +158,8 @@ No circular or upward dependencies.
 - **Delete guard**: Latest and frozen versions cannot be deleted.
 - **Selective deletion**: Header checkbox select-all + "Delete Versions" deletes only checked, non-frozen, non-latest.
 - **Restore**: Append-only. Snapshots current state (RESTORE trigger, note "Replaced by vN") before restoring.
-  Target copied to temp before auto-snapshot to survive pruning.
+  Target copied to temp before auto-snapshot to survive pruning. Blocked at unprunable capacity
+  (`isAtUnprunableCapacity()`) — same guard as checkpoint and auto-checkpoint.
 - **Lock**: Application-level (no `FileLock`). Ownership = hostname + PID. Dual-purpose L button: verify ownership →
   polite acquire → force release with confirmation. `ensureWriteLock()` on every write op. Dynamic tooltip reflects
   state.

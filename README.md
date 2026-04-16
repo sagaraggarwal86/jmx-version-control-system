@@ -30,7 +30,7 @@ sessions — no Git, no SVN, no external tools.
 | **Auto-Snapshot on Save**  | Creates a version snapshot after every Ctrl+S. Duplicate saves skipped via SHA-256 dedup |
 | **Manual Checkpoint**      | Named snapshot with optional note (500 chars) and optional freeze. Toolbar C or Ctrl+K   |
 | **Version History Panel**  | Bottom dockable panel with version list, actions, retention warning banner               |
-| **Restore / Rollback**     | One-click restore to any version. Auto-snapshots current state first (safety net)        |
+| **Restore / Rollback**     | One-click restore to any version. Auto-snapshots current state first. Blocked at unprunable capacity |
 | **Freeze (Pin) Versions**  | Frozen versions are exempt from retention pruning and bulk deletion                      |
 | **Auto-Checkpoint**        | Configurable periodic auto-save + snapshot (disabled by default)                         |
 | **Selective Deletion**     | Header checkbox select-all + Delete Versions. Latest and frozen versions protected       |
@@ -232,6 +232,7 @@ my-test-plan.jmx                    <-- working file
 | "Read-Only Mode" dialog on open      | Another JMeter instance holds the lock. Use L button to force release if the other closed. |
 | History panel empty                  | Save the test plan at least once. New/unsaved plans have no history.                       |
 | Restore button disabled              | Snapshot file missing from disk. Delete the orphaned entry to clean up.                    |
+| "Cannot restore" at capacity         | At retention limit with all versions frozen. Increase retention or unfreeze a version.    |
 | "Cannot reduce retention" error      | Unfreeze some versions first. Floor = frozen count + 1.                                    |
 | Versions not pruned at max retention | All non-latest versions are frozen. Unfreeze to allow FIFO pruning.                        |
 

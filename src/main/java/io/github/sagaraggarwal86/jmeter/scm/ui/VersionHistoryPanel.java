@@ -433,6 +433,14 @@ public final class VersionHistoryPanel extends JPanel {
             return;
         }
 
+        if (context.isAtUnprunableCapacity()) {
+            JOptionPane.showMessageDialog(this,
+                    "Cannot restore — at retention limit and all versions are frozen.\n" +
+                            "Increase retention limit or unfreeze a version.",
+                    "JVCS", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         VersionEntry entry = tableModel.getEntryAt(row);
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Restore to version " + entry.getVersion() + "?\n" +
