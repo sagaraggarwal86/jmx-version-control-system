@@ -1,5 +1,9 @@
 # JVCS — JMX Version Control System
 
+[![Release](https://img.shields.io/github/v/release/sagaraggarwal86/jmx-version-control-system?label=release&sort=semver)](https://github.com/sagaraggarwal86/jmx-version-control-system/releases/latest)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.sagaraggarwal86/jmx-version-control-system.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.sagaraggarwal86/jmx-version-control-system)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 A lightweight local version control plugin for Apache JMeter test plans (.jmx files). Auto-snapshots
 on every save, linear version history, one-click rollback. A persistent undo stack across JMeter
 sessions — no Git, no SVN, no external tools.
@@ -25,36 +29,35 @@ sessions — no Git, no SVN, no external tools.
 
 ## Features
 
-| Feature                    | Description                                                                                          |
-|----------------------------|------------------------------------------------------------------------------------------------------|
-| **Auto-Snapshot on Save**  | Creates a version snapshot after every Ctrl+S. Duplicate saves skipped via SHA-256 dedup             |
-| **Manual Checkpoint**      | Named snapshot with optional note (500 chars) and optional freeze. Toolbar C or Ctrl+K               |
-| **Version History Panel**  | Bottom dockable panel with version list, actions, retention warning banner                           |
-| **Restore / Rollback**     | One-click restore to any version. Auto-snapshots current state first. Blocked at unprunable capacity |
-| **Freeze (Pin) Versions**  | Frozen versions are exempt from retention pruning and bulk deletion                                  |
-| **Auto-Checkpoint**        | Configurable periodic auto-save + snapshot (disabled by default)                                     |
-| **Selective Deletion**     | Header checkbox select-all + Delete Versions. Latest and frozen versions protected                   |
-| **Export Version**         | Export any snapshot as a .jmx file to a location of your choice                                      |
-| **Configurable Retention** | Max versions per plan (default 20). FIFO pruning of oldest unpinned versions                         |
-| **Configurable Storage**   | Relative or absolute storage path. GUI migration with Migrate/Reset/Cancel dialog                    |
-| **Lock File Mechanism**    | Hostname + PID ownership. Stale detection. Force release with confirmation                           |
-| **Dirty State Indicator**  | Toolbar indicator: green (clean), amber (dirty), red (read-only)                                     |
-| **Toolbar Buttons**        | C (Checkpoint), H (History), I (Indicator), L (Lock), D (Delete). Visibility togglable               |
-| **Keyboard Shortcuts**     | Ctrl+K (Checkpoint), Ctrl+H (Toggle History)                                                         |
-| **Audit Log**              | JSON-lines audit trail of all actions. 1MB rotation with single backup                               |
-| **Tools Menu Integration** | Tools > Version Control > History, Checkpoint, Settings, About                                       |
-| **Self-Healing**           | Corrupt index.json auto-recovered from .jmxv filenames on disk                                       |
-| **Pure Additive**          | Never modifies JMeter behavior. All reflection with graceful fallback                                |
+| Feature                    | Description                                                                              |
+|----------------------------|------------------------------------------------------------------------------------------|
+| **Auto-Snapshot on Save**  | Creates a snapshot after every Ctrl+S. Duplicate saves skipped via SHA-256 dedup         |
+| **Manual Checkpoint**      | Named snapshot with optional note and optional freeze                                    |
+| **Version History Panel**  | Bottom dockable panel with version list, actions, retention warning                      |
+| **Restore / Rollback**     | One-click restore to any version. Current state auto-snapshotted first                   |
+| **Freeze (Pin) Versions**  | Frozen versions are exempt from retention pruning and bulk deletion                      |
+| **Auto-Checkpoint**        | Optional periodic auto-save + snapshot (disabled by default)                             |
+| **Selective Deletion**     | Bulk-delete with header checkbox. Latest and frozen versions protected                   |
+| **Export Version**         | Export any snapshot as a `.jmx` file to a location of your choice                        |
+| **Configurable Retention** | Max versions per plan. FIFO pruning of oldest unpinned versions                          |
+| **Configurable Storage**   | Relative or absolute storage path with GUI migration                                     |
+| **Lock File Mechanism**    | Hostname + PID ownership. Stale detection. Force release with confirmation               |
+| **Dirty State Indicator**  | Toolbar indicator: green (clean), amber (dirty), red (read-only)                         |
+| **GUI Integration**        | Toolbar buttons, keyboard shortcuts, and Tools > Version Control menu                    |
+| **Audit Log**              | JSON-lines audit trail of all actions. 1 MB rotation with single backup                  |
+| **Safe to Install**        | Never blocks JMeter save or modifies native behavior — all integration falls back safely |
+| **Automatic Recovery**     | Rebuilds `index.json` from disk if the metadata file is corrupted                        |
 
 ---
 
 ## Requirements
 
-| Requirement   | Version             |
-|---------------|---------------------|
-| Java          | 17                  |
-| Apache JMeter | 5.6.3               |
-| Maven         | 3.8+ *(build only)* |
+| Requirement      | Version                  |
+|------------------|--------------------------|
+| Java             | 17                       |
+| Apache JMeter    | 5.6.3                    |
+| Maven            | 3.8+ *(build only)*      |
+| Operating System | Windows, Linux, or macOS |
 
 ---
 
@@ -79,8 +82,13 @@ sessions — no Git, no SVN, no external tools.
 git clone https://github.com/sagaraggarwal86/jmx-version-control-system.git
 cd jmx-version-control-system
 mvn clean verify
-cp target/jmx-version-control-system-*.jar $JMETER_HOME/lib/ext/
 ```
+
+Then copy the built JAR into `<JMETER_HOME>/lib/ext/`:
+
+- **Linux / macOS**: `cp target/jmx-version-control-system-*.jar "$JMETER_HOME/lib/ext/"`
+- **Windows (PowerShell)**: `Copy-Item target\jmx-version-control-system-*.jar "$env:JMETER_HOME\lib\ext\"`
+- **Windows (cmd)**: `copy target\jmx-version-control-system-*.jar "%JMETER_HOME%\lib\ext\"`
 
 ---
 
@@ -92,7 +100,8 @@ cp target/jmx-version-control-system-*.jar $JMETER_HOME/lib/ext/
 4. Make changes, save again — each save creates a new version.
 5. Click **Restore** on any version to roll back. Your current state is auto-saved first.
 
-Zero configuration required. JVCS activates automatically on first save or file open.
+Zero configuration required. JVCS activates automatically on first save or file open, creating a
+`.history/<plan-stem>/` directory next to your `.jmx` file.
 
 ---
 
@@ -149,7 +158,13 @@ The L button serves three purposes depending on lock state:
 
 ### Settings Dialog
 
-Access via **Tools > Version Control > Settings** or configure in `user.properties`.
+Access via **Tools > Version Control > Settings**, or edit `user.properties` directly at:
+
+- **Linux / macOS**: `$JMETER_HOME/bin/user.properties`
+- **Windows**: `%JMETER_HOME%\bin\user.properties`
+
+`user.properties` is the single source of truth for all settings. Defaults are written automatically
+on first plugin activation with inline documentation.
 
 | Setting            | Property                        | Default    | Description                               |
 |--------------------|---------------------------------|------------|-------------------------------------------|
@@ -159,9 +174,6 @@ Access via **Tools > Version Control > Settings** or configure in `user.properti
 | Auto-Save Enabled  | `scm.autosave.enabled`          | `false`    | Enable periodic auto-checkpoint           |
 | Auto-Save Interval | `scm.autosave.interval.minutes` | `5`        | Auto-checkpoint interval in minutes       |
 | Toolbar Visible    | `scm.toolbar.visible`           | `true`     | Show/hide SCM toolbar buttons             |
-
-`user.properties` is the single source of truth for all settings. Default values are written
-automatically on first plugin activation with inline documentation.
 
 ### Storage Location Change
 
@@ -253,11 +265,12 @@ Bug reports and pull requests are welcome via
 Before submitting a pull request:
 
 ```bash
-mvn clean verify          # All tests must pass
+mvn clean verify          # All tests must pass (JaCoCo ≥85% line coverage enforced)
 ```
 
 - Test manually with JMeter 5.6.3
 - Keep each pull request focused on a single change
+- See [CLAUDE.md](CLAUDE.md) for architecture, design decisions, and enforced invariants
 
 ---
 

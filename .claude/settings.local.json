@@ -20,7 +20,11 @@
       "Bash(powershell:*)",
       "Bash(awk '{print $1, $2}')",
       "Bash(powershell.exe *)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:search.maven.org)",
+      "WebFetch(domain:img.shields.io)",
+      "WebFetch(domain:central.sonatype.com)",
+      "WebFetch(domain:repo1.maven.org)"
     ]
   }
 }
