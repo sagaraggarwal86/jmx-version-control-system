@@ -33,7 +33,7 @@
 - For every decision point or design choice, present options in a concise table:
 
   | Option | Risk | Effort | Impact | Recommendation |
-      |--------|------|--------|--------|----------------|
+        |--------|------|--------|--------|----------------|
 
   Highlight the recommended option. Keep descriptions brief — one line per cell.
 
