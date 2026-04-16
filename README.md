@@ -25,26 +25,26 @@ sessions — no Git, no SVN, no external tools.
 
 ## Features
 
-| Feature                    | Description                                                                              |
-|----------------------------|------------------------------------------------------------------------------------------|
-| **Auto-Snapshot on Save**  | Creates a version snapshot after every Ctrl+S. Duplicate saves skipped via SHA-256 dedup |
-| **Manual Checkpoint**      | Named snapshot with optional note (500 chars) and optional freeze. Toolbar C or Ctrl+K   |
-| **Version History Panel**  | Bottom dockable panel with version list, actions, retention warning banner               |
+| Feature                    | Description                                                                                          |
+|----------------------------|------------------------------------------------------------------------------------------------------|
+| **Auto-Snapshot on Save**  | Creates a version snapshot after every Ctrl+S. Duplicate saves skipped via SHA-256 dedup             |
+| **Manual Checkpoint**      | Named snapshot with optional note (500 chars) and optional freeze. Toolbar C or Ctrl+K               |
+| **Version History Panel**  | Bottom dockable panel with version list, actions, retention warning banner                           |
 | **Restore / Rollback**     | One-click restore to any version. Auto-snapshots current state first. Blocked at unprunable capacity |
-| **Freeze (Pin) Versions**  | Frozen versions are exempt from retention pruning and bulk deletion                      |
-| **Auto-Checkpoint**        | Configurable periodic auto-save + snapshot (disabled by default)                         |
-| **Selective Deletion**     | Header checkbox select-all + Delete Versions. Latest and frozen versions protected       |
-| **Export Version**         | Export any snapshot as a .jmx file to a location of your choice                          |
-| **Configurable Retention** | Max versions per plan (default 20). FIFO pruning of oldest unpinned versions             |
-| **Configurable Storage**   | Relative or absolute storage path. GUI migration with Migrate/Reset/Cancel dialog        |
-| **Lock File Mechanism**    | Hostname + PID ownership. Stale detection. Force release with confirmation               |
-| **Dirty State Indicator**  | Toolbar indicator: green (clean), amber (dirty), red (read-only)                         |
-| **Toolbar Buttons**        | C (Checkpoint), H (History), I (Indicator), L (Lock), D (Delete). Visibility togglable   |
-| **Keyboard Shortcuts**     | Ctrl+K (Checkpoint), Ctrl+H (Toggle History)                                             |
-| **Audit Log**              | JSON-lines audit trail of all actions. 1MB rotation with single backup                   |
-| **Tools Menu Integration** | Tools > Version Control > History, Checkpoint, Settings, About                           |
-| **Self-Healing**           | Corrupt index.json auto-recovered from .jmxv filenames on disk                           |
-| **Pure Additive**          | Never modifies JMeter behavior. All reflection with graceful fallback                    |
+| **Freeze (Pin) Versions**  | Frozen versions are exempt from retention pruning and bulk deletion                                  |
+| **Auto-Checkpoint**        | Configurable periodic auto-save + snapshot (disabled by default)                                     |
+| **Selective Deletion**     | Header checkbox select-all + Delete Versions. Latest and frozen versions protected                   |
+| **Export Version**         | Export any snapshot as a .jmx file to a location of your choice                                      |
+| **Configurable Retention** | Max versions per plan (default 20). FIFO pruning of oldest unpinned versions                         |
+| **Configurable Storage**   | Relative or absolute storage path. GUI migration with Migrate/Reset/Cancel dialog                    |
+| **Lock File Mechanism**    | Hostname + PID ownership. Stale detection. Force release with confirmation                           |
+| **Dirty State Indicator**  | Toolbar indicator: green (clean), amber (dirty), red (read-only)                                     |
+| **Toolbar Buttons**        | C (Checkpoint), H (History), I (Indicator), L (Lock), D (Delete). Visibility togglable               |
+| **Keyboard Shortcuts**     | Ctrl+K (Checkpoint), Ctrl+H (Toggle History)                                                         |
+| **Audit Log**              | JSON-lines audit trail of all actions. 1MB rotation with single backup                               |
+| **Tools Menu Integration** | Tools > Version Control > History, Checkpoint, Settings, About                                       |
+| **Self-Healing**           | Corrupt index.json auto-recovered from .jmxv filenames on disk                                       |
+| **Pure Additive**          | Never modifies JMeter behavior. All reflection with graceful fallback                                |
 
 ---
 
@@ -232,7 +232,7 @@ my-test-plan.jmx                    <-- working file
 | "Read-Only Mode" dialog on open      | Another JMeter instance holds the lock. Use L button to force release if the other closed. |
 | History panel empty                  | Save the test plan at least once. New/unsaved plans have no history.                       |
 | Restore button disabled              | Snapshot file missing from disk. Delete the orphaned entry to clean up.                    |
-| "Cannot restore" at capacity         | At retention limit with all versions frozen. Increase retention or unfreeze a version.    |
+| "Cannot restore" at capacity         | At retention limit with all versions frozen. Increase retention or unfreeze a version.     |
 | "Cannot reduce retention" error      | Unfreeze some versions first. Floor = frozen count + 1.                                    |
 | Versions not pruned at max retention | All non-latest versions are frozen. Unfreeze to allow FIFO pruning.                        |
 

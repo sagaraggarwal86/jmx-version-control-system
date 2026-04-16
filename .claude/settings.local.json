@@ -19,7 +19,8 @@
       "Bash(cmd.exe:*)",
       "Bash(powershell:*)",
       "Bash(awk '{print $1, $2}')",
-      "Bash(powershell.exe *)"
+      "Bash(powershell.exe *)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }
