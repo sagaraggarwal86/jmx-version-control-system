@@ -45,6 +45,7 @@ jobs:
           MARKER = "<!-- mistral-pr-review -->"
           MAX_DIFF_CHARS = 60000
           MAX_DIFF_LINES = 2000
+          MAX_REVIEW_CHARS = 60000  # GitHub comment body limit is 65 536
 
           def post_comment(body):
               pr_number = os.environ["PR_NUMBER"]
@@ -74,7 +75,13 @@ jobs:
               )
               raise SystemExit(0)
 
-          claude_md = pathlib.Path("CLAUDE.md").read_text()
+          try:
+              claude_md = pathlib.Path("CLAUDE.md").read_text()
+          except FileNotFoundError:
+              post_comment(
+                  f"{MARKER}\n**PR Review (Mistral)**: skipped — CLAUDE.md not found in repo root."
+              )
+              raise SystemExit(0)
           m = re.search(r"## Enforced invariants.*?(?=\n## )", claude_md, flags=re.DOTALL)
           if not m:
               post_comment(
@@ -94,7 +101,7 @@ jobs:
           2. Bugs — null handling, EDT vs background threading, resource leaks, race conditions, incorrect logic.
           3. Security issues — injection, deserialization, secret leakage, unsafe I/O, path traversal.
 
-          Skip: style, naming preferences, comment density, formatting.
+          Skip: style, naming preferences, comment density, formatting. Flag only issues visible in the diff — do not invent hypothetical failure modes (missing env vars, unset secrets, "what if X is not set" scenarios).
 
           Technical rules:
           - Target JMeter 5.6.3 exclusively. Do not recommend APIs outside 5.6.3.
@@ -156,6 +163,9 @@ jobs:
 
           if truncated:
               review += f"\n\n_Note: diff was truncated to {MAX_DIFF_CHARS:,} chars; trailing changes were not reviewed._"
+
+          if len(review) > MAX_REVIEW_CHARS:
+              review = review[:MAX_REVIEW_CHARS] + f"\n\n_Note: review was clipped at {MAX_REVIEW_CHARS:,} chars (GitHub comment limit)._"
 
           post_comment(f"{MARKER}\n### PR Review (Mistral `codestral-latest`)\n\n{review}")
           PY
