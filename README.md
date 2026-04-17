@@ -1,7 +1,7 @@
 # JVCS — JMX Version Control System
 
 [![Release](https://img.shields.io/github/v/release/sagaraggarwal86/jmx-version-control-system?label=release&sort=semver&cacheSeconds=300)](https://github.com/sagaraggarwal86/jmx-version-control-system/releases/latest)
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.sagaraggarwal86/jmx-version-control-system.svg?label=Maven%20Central&cacheSeconds=300)](https://central.sonatype.com/artifact/io.github.sagaraggarwal86/jmx-version-control-system)
+[![Maven Central](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Frepo1.maven.org%2Fmaven2%2Fio%2Fgithub%2Fsagaraggarwal86%2Fjmx-version-control-system%2Fmaven-metadata.xml&label=Maven%20Central&cacheSeconds=300)](https://central.sonatype.com/artifact/io.github.sagaraggarwal86/jmx-version-control-system)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 A lightweight local version control plugin for Apache JMeter test plans (.jmx files). Auto-snapshots

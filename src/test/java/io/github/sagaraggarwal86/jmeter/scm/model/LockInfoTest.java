@@ -24,19 +24,19 @@ class LockInfoTest {
     @Test
     void constructorRejectsNullHostname() {
         assertThrows(NullPointerException.class, () ->
-                new LockInfo(1, null, LocalDateTime.now(), "5.6.3"));
+            new LockInfo(1, null, LocalDateTime.now(), "5.6.3"));
     }
 
     @Test
     void constructorRejectsNullTimestamp() {
         assertThrows(NullPointerException.class, () ->
-                new LockInfo(1, "host", null, "5.6.3"));
+            new LockInfo(1, "host", null, "5.6.3"));
     }
 
     @Test
     void constructorRejectsNullJmeterVersion() {
         assertThrows(NullPointerException.class, () ->
-                new LockInfo(1, "host", LocalDateTime.now(), null));
+            new LockInfo(1, "host", LocalDateTime.now(), null));
     }
 
     @Test

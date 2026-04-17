@@ -44,8 +44,8 @@ public final class IndexManager {
         if (!Files.exists(indexFile)) {
             log.debug("No index.json found, creating default index");
             VersionIndex index = VersionIndex.createDefault(
-                    ScmConfigManager.getGlobalMaxRetention(),
-                    ScmConfigManager.getGlobalStorageLocation());
+                ScmConfigManager.getGlobalMaxRetention(),
+                ScmConfigManager.getGlobalStorageLocation());
             save(storageDir, index);
             return index;
         }
@@ -54,7 +54,7 @@ public final class IndexManager {
             VersionIndex index = FileOperations.objectMapper().readValue(indexFile.toFile(), VersionIndex.class);
             if (index.getSchemaVersion() != 1) {
                 log.warn("index.json has schema version {} (expected 1) — fields may be misinterpreted",
-                        index.getSchemaVersion());
+                    index.getSchemaVersion());
             }
             selfHeal(storageDir, index);
             return index;
@@ -147,8 +147,8 @@ public final class IndexManager {
         }
 
         VersionIndex index = VersionIndex.createDefault(
-                ScmConfigManager.getGlobalMaxRetention(),
-                ScmConfigManager.getGlobalStorageLocation());
+            ScmConfigManager.getGlobalMaxRetention(),
+            ScmConfigManager.getGlobalStorageLocation());
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(storageDir, "*.jmxv")) {
             List<VersionEntry> entries = new ArrayList<>();
@@ -160,8 +160,8 @@ public final class IndexManager {
                     LocalDateTime timestamp = LocalDateTime.now(); // Best effort — use file time
                     try {
                         timestamp = LocalDateTime.ofInstant(
-                                Files.getLastModifiedTime(file).toInstant(),
-                                java.time.ZoneId.systemDefault());
+                            Files.getLastModifiedTime(file).toInstant(),
+                            java.time.ZoneId.systemDefault());
                     } catch (IOException ignored) {
                         // Use current time as fallback
                     }
@@ -172,7 +172,7 @@ public final class IndexManager {
                         checksum = "unknown";
                     }
                     entries.add(new VersionEntry(version, fileName, timestamp,
-                            TriggerType.CHECKPOINT, "[recovered]", checksum));
+                        TriggerType.CHECKPOINT, "[recovered]", checksum));
                 }
             }
             entries.sort(java.util.Comparator.comparingInt(VersionEntry::getVersion));

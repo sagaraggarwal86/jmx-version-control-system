@@ -24,32 +24,32 @@ class VersionEntryTest {
     @Test
     void constructorAllowsNullNote() {
         VersionEntry entry = new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
-                TriggerType.CHECKPOINT, null, "abc123");
+            TriggerType.CHECKPOINT, null, "abc123");
         assertNull(entry.getNote());
     }
 
     @Test
     void constructorRejectsNullFile() {
         assertThrows(NullPointerException.class, () ->
-                new VersionEntry(1, null, LocalDateTime.now(), TriggerType.CHECKPOINT, null, "abc"));
+            new VersionEntry(1, null, LocalDateTime.now(), TriggerType.CHECKPOINT, null, "abc"));
     }
 
     @Test
     void constructorRejectsNullTimestamp() {
         assertThrows(NullPointerException.class, () ->
-                new VersionEntry(1, "v001.jmxv", null, TriggerType.CHECKPOINT, null, "abc"));
+            new VersionEntry(1, "v001.jmxv", null, TriggerType.CHECKPOINT, null, "abc"));
     }
 
     @Test
     void constructorRejectsNullTrigger() {
         assertThrows(NullPointerException.class, () ->
-                new VersionEntry(1, "v001.jmxv", LocalDateTime.now(), null, null, "abc"));
+            new VersionEntry(1, "v001.jmxv", LocalDateTime.now(), null, null, "abc"));
     }
 
     @Test
     void constructorRejectsNullChecksum() {
         assertThrows(NullPointerException.class, () ->
-                new VersionEntry(1, "v001.jmxv", LocalDateTime.now(), TriggerType.CHECKPOINT, null, null));
+            new VersionEntry(1, "v001.jmxv", LocalDateTime.now(), TriggerType.CHECKPOINT, null, null));
     }
 
     @Test
@@ -75,7 +75,7 @@ class VersionEntryTest {
     @Test
     void toStringContainsKey() {
         VersionEntry entry = new VersionEntry(5, "v005.jmxv", LocalDateTime.now(),
-                TriggerType.CHECKPOINT, null, "abc");
+            TriggerType.CHECKPOINT, null, "abc");
         String str = entry.toString();
         assertTrue(str.contains("v5"));
         assertTrue(str.contains("v005.jmxv"));

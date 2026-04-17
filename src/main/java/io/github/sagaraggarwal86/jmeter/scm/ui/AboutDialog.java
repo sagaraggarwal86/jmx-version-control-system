@@ -39,9 +39,9 @@ public final class AboutDialog {
         panel.add(Box.createVerticalStrut(12));
 
         JLabel description = new JLabel(
-                "<html>Lightweight local version control for JMeter test plans (.jmx files).<br>" +
-                        "Manual and auto checkpoints, linear version history, one-click rollback.<br>" +
-                        "No Git, no SVN, no external tools required.</html>");
+            "<html>Lightweight local version control for JMeter test plans (.jmx files).<br>" +
+                "Manual and auto checkpoints, linear version history, one-click rollback.<br>" +
+                "No Git, no SVN, no external tools required.</html>");
         description.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(description);
 
@@ -49,14 +49,14 @@ public final class AboutDialog {
 
         // R10: Uninstall note
         JLabel note = new JLabel(
-                "<html><b>Note:</b> Version snapshots are stored in the configured storage<br>" +
-                        "location (default: .history). Removing this plugin does <b>not</b><br>" +
-                        "delete your version history.</html>");
+            "<html><b>Note:</b> Version snapshots are stored in the configured storage<br>" +
+                "location (default: .history). Removing this plugin does <b>not</b><br>" +
+                "delete your version history.</html>");
         note.setForeground(new Color(100, 100, 100));
         note.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(note);
 
         JOptionPane.showMessageDialog(parent, panel,
-                "About — JVCS", JOptionPane.PLAIN_MESSAGE);
+            "About — JVCS", JOptionPane.PLAIN_MESSAGE);
     }
 }

@@ -77,8 +77,8 @@ public final class SettingsDialog {
         panel.add(new JLabel("Max Retention:"), gbc);
 
         int currentRetention = context != null
-                ? ScmConfigManager.getMaxRetention(context.getVersionIndex())
-                : ScmConfigManager.getGlobalMaxRetention();
+            ? ScmConfigManager.getMaxRetention(context.getVersionIndex())
+            : ScmConfigManager.getGlobalMaxRetention();
         JSpinner retentionSpinner = new JSpinner(new SpinnerNumberModel(currentRetention, 1, 1000, 1));
         gbc.gridx = 1;
         panel.add(retentionSpinner, gbc);
@@ -89,7 +89,7 @@ public final class SettingsDialog {
         panel.add(new JLabel("Stale Lock Timeout (minutes):"), gbc);
 
         JSpinner staleSpinner = new JSpinner(
-                new SpinnerNumberModel(ScmConfigManager.getStaleLockMinutes(), 1, 10080, 5));
+            new SpinnerNumberModel(ScmConfigManager.getStaleLockMinutes(), 1, 10080, 5));
         gbc.gridx = 1;
         panel.add(staleSpinner, gbc);
 
@@ -117,7 +117,7 @@ public final class SettingsDialog {
         panel.add(new JLabel("Auto-Checkpoint Interval (minutes):"), gbc);
 
         JSpinner autoSaveSpinner = new JSpinner(
-                new SpinnerNumberModel(ScmConfigManager.getAutoSaveIntervalMinutes(), 1, 60, 1));
+            new SpinnerNumberModel(ScmConfigManager.getAutoSaveIntervalMinutes(), 1, 60, 1));
         autoSaveSpinner.setEnabled(autoSaveCheckbox.isSelected());
         autoSaveCheckbox.addActionListener(e -> autoSaveSpinner.setEnabled(autoSaveCheckbox.isSelected()));
         gbc.gridx = 1;
@@ -146,8 +146,8 @@ public final class SettingsDialog {
         gbc.gridy = 8;
         gbc.gridwidth = 2;
         JLabel noteLabel = new JLabel("<html><i>All settings saved in user.properties (JMETER_HOME/bin/).<br>" +
-                "Property prefix: scm.* — see user.properties for all options.<br>" +
-                "Retention and frozen versions are per test plan (stored in index.json).</i></html>");
+            "Property prefix: scm.* — see user.properties for all options.<br>" +
+            "Retention and frozen versions are per test plan (stored in index.json).</i></html>");
         noteLabel.setForeground(Color.GRAY);
         panel.add(noteLabel, gbc);
 
@@ -192,15 +192,15 @@ public final class SettingsDialog {
                         Path root = testPath.getRoot();
                         if (root != null && !Files.exists(root)) {
                             JOptionPane.showMessageDialog(dialog,
-                                    "Storage path root does not exist: " + root,
-                                    "JVCS", JOptionPane.ERROR_MESSAGE);
+                                "Storage path root does not exist: " + root,
+                                "JVCS", JOptionPane.ERROR_MESSAGE);
                             return;
                         }
                     }
                 } catch (java.nio.file.InvalidPathException ex) {
                     JOptionPane.showMessageDialog(dialog,
-                            "Invalid storage path: " + ex.getMessage(),
-                            "JVCS", JOptionPane.ERROR_MESSAGE);
+                        "Invalid storage path: " + ex.getMessage(),
+                        "JVCS", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
             }
@@ -212,9 +212,9 @@ public final class SettingsDialog {
 
         // Escape key dismisses dialog (Cancel behavior)
         dialog.getRootPane().registerKeyboardAction(
-                ev -> dialog.dispose(),
-                KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
-                JComponent.WHEN_IN_FOCUSED_WINDOW);
+            ev -> dialog.dispose(),
+            KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ESCAPE, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         dialog.pack();
         dialog.setLocationRelativeTo(parent);
@@ -230,7 +230,7 @@ public final class SettingsDialog {
             if (!newStorageVal.equals(oldStorageVal)) {
                 if (context != null && !context.isDisposed()) {
                     boolean changed = handleStorageLocationChange(
-                            parent, initializer, context, oldStorageVal, newStorageVal);
+                        parent, initializer, context, oldStorageVal, newStorageVal);
                     if (changed) {
                         context = initializer.getCurrentContext();
                     }
@@ -253,32 +253,32 @@ public final class SettingsDialog {
                     if (excess > 0) {
                         VersionEntry latest = index.getLatestVersion();
                         long frozenCount = index.getVersions().stream()
-                                .filter(v -> index.isPinned(v.getVersion()))
-                                .count();
+                            .filter(v -> index.isPinned(v.getVersion()))
+                            .count();
                         int minRetention = (int) frozenCount + 1; // +1 for latest
                         if (newRetention < minRetention) {
                             JOptionPane.showMessageDialog(parent,
-                                    "Cannot reduce retention to " + newRetention + ".\n" +
-                                            "You have " + frozenCount + " frozen version(s) + 1 latest = " +
-                                            minRetention + " minimum.\n" +
-                                            "Unfreeze some versions first.",
-                                    "Retention Change", JOptionPane.WARNING_MESSAGE);
+                                "Cannot reduce retention to " + newRetention + ".\n" +
+                                    "You have " + frozenCount + " frozen version(s) + 1 latest = " +
+                                    minRetention + " minimum.\n" +
+                                    "Unfreeze some versions first.",
+                                "Retention Change", JOptionPane.WARNING_MESSAGE);
                             newRetention = currentRetention;
                         } else {
                             long deletableCount = index.getVersions().stream()
-                                    .filter(v -> !index.isPinned(v.getVersion()))
-                                    .filter(v -> latest == null || v.getVersion() != latest.getVersion())
-                                    .count();
+                                .filter(v -> !index.isPinned(v.getVersion()))
+                                .filter(v -> latest == null || v.getVersion() != latest.getVersion())
+                                .count();
                             int willDelete = (int) Math.min(excess, deletableCount);
 
                             if (willDelete > 0) {
                                 int confirm = JOptionPane.showConfirmDialog(parent,
-                                        "Reducing retention to " + newRetention + " will delete " +
-                                                willDelete + " version(s).\n" +
-                                                "Frozen versions and the latest version will be preserved.\n" +
-                                                "This cannot be undone. Continue?",
-                                        "Retention Change", JOptionPane.YES_NO_OPTION,
-                                        JOptionPane.WARNING_MESSAGE);
+                                    "Reducing retention to " + newRetention + " will delete " +
+                                        willDelete + " version(s).\n" +
+                                        "Frozen versions and the latest version will be preserved.\n" +
+                                        "This cannot be undone. Continue?",
+                                    "Retention Change", JOptionPane.YES_NO_OPTION,
+                                    JOptionPane.WARNING_MESSAGE);
                                 if (confirm != JOptionPane.YES_OPTION) {
                                     newRetention = currentRetention;
                                 }
@@ -304,32 +304,32 @@ public final class SettingsDialog {
                 } catch (Exception e) {
                     log.error("Failed to save settings: {}", e.getMessage(), e);
                     JOptionPane.showMessageDialog(parent,
-                            "Failed to save settings: " + e.getMessage(),
-                            "JVCS", JOptionPane.ERROR_MESSAGE);
+                        "Failed to save settings: " + e.getMessage(),
+                        "JVCS", JOptionPane.ERROR_MESSAGE);
                 }
             }
 
             ScmConfigManager.setAndPersist(ScmConfigManager.PROP_MAX_RETENTION,
-                    String.valueOf((int) retentionSpinner.getValue()));
+                String.valueOf((int) retentionSpinner.getValue()));
             ScmConfigManager.setAndPersist(ScmConfigManager.PROP_LOCK_STALE_MINUTES,
-                    String.valueOf((int) staleSpinner.getValue()));
+                String.valueOf((int) staleSpinner.getValue()));
 
             boolean newAutoSaveEnabled = autoSaveCheckbox.isSelected();
             int newAutoSaveInterval = (int) autoSaveSpinner.getValue();
             ScmConfigManager.setAndPersist(ScmConfigManager.PROP_AUTOSAVE_ENABLED,
-                    String.valueOf(newAutoSaveEnabled));
+                String.valueOf(newAutoSaveEnabled));
             ScmConfigManager.setAndPersist(ScmConfigManager.PROP_AUTOSAVE_INTERVAL,
-                    String.valueOf(newAutoSaveInterval));
+                String.valueOf(newAutoSaveInterval));
             initializer.restartAutoCheckpoint();
 
             boolean newToolbarVisible = toolbarCheckbox.isSelected();
             ScmConfigManager.setAndPersist(ScmConfigManager.PROP_TOOLBAR_VISIBLE,
-                    String.valueOf(newToolbarVisible));
+                String.valueOf(newToolbarVisible));
             initializer.setToolbarVisible(newToolbarVisible);
 
             log.info("Settings updated: storage={}, retention={}, staleLock={}min, autoCheckpoint={}, interval={}min, toolbar={}",
-                    storageField.getText().trim(), retentionSpinner.getValue(),
-                    staleSpinner.getValue(), newAutoSaveEnabled, newAutoSaveInterval, newToolbarVisible);
+                storageField.getText().trim(), retentionSpinner.getValue(),
+                staleSpinner.getValue(), newAutoSaveEnabled, newAutoSaveInterval, newToolbarVisible);
         }
     }
 
@@ -342,16 +342,16 @@ public final class SettingsDialog {
                                                        ScmContext context, String oldLocation,
                                                        String newLocation) {
         String message = "Storage location will change from:\n  " + oldLocation +
-                "\nto:\n  " + newLocation + "\n\n" +
-                "Migrate \u2014 Move all version files to the new location\n" +
-                "Reset \u2014 Start fresh at the new location (old files deleted)\n" +
-                "Cancel \u2014 Keep the current storage location";
+            "\nto:\n  " + newLocation + "\n\n" +
+            "Migrate \u2014 Move all version files to the new location\n" +
+            "Reset \u2014 Start fresh at the new location (old files deleted)\n" +
+            "Cancel \u2014 Keep the current storage location";
 
         String[] options = {"Migrate", "Reset", "Cancel"};
         int choice = JOptionPane.showOptionDialog(parent, message,
-                "Storage Location Change",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-                null, options, options[0]);
+            "Storage Location Change",
+            JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+            null, options, options[0]);
 
         Path jmxFile = context.getJmxFile();
 
@@ -374,7 +374,7 @@ public final class SettingsDialog {
                 initializer.initializeForTestPlan(jmxFile);
                 Path resetNewDir = resolveStorageDir(jmxFile, newLocation);
                 AuditLogger.logStorageReset(resetNewDir, oldLocation,
-                        backupZip != null ? backupZip.toString() : null);
+                    backupZip != null ? backupZip.toString() : null);
                 if (backupZip != null) {
                     Toast.show("Backup saved to " + backupZip.getFileName() + ". Fresh history started");
                 } else {
@@ -406,7 +406,7 @@ public final class SettingsDialog {
                 stream.filter(Files::isRegularFile).forEach(file -> {
                     try {
                         Files.move(file, newDir.resolve(file.getFileName()),
-                                StandardCopyOption.REPLACE_EXISTING);
+                            StandardCopyOption.REPLACE_EXISTING);
                         migrated[0]++;
                     } catch (IOException e) {
                         log.warn("Could not migrate {}: {}", file.getFileName(), e.getMessage());
@@ -422,17 +422,17 @@ public final class SettingsDialog {
             }
             if (failed[0] > 0) {
                 JOptionPane.showMessageDialog(parent,
-                        "Migrated " + migrated[0] + " file(s), " + failed[0] + " failed.\n" +
-                                "Check the old location for remaining files.",
-                        "JVCS", JOptionPane.WARNING_MESSAGE);
+                    "Migrated " + migrated[0] + " file(s), " + failed[0] + " failed.\n" +
+                        "Check the old location for remaining files.",
+                    "JVCS", JOptionPane.WARNING_MESSAGE);
             } else {
                 Toast.show("Migrated " + migrated[0] + " file(s) to new location");
             }
         } catch (IOException e) {
             log.warn("Migration failed: {}", e.getMessage());
             JOptionPane.showMessageDialog(parent,
-                    "Migration failed: " + e.getMessage() + "\nFiles may need manual migration.",
-                    "JVCS", JOptionPane.WARNING_MESSAGE);
+                "Migration failed: " + e.getMessage() + "\nFiles may need manual migration.",
+                "JVCS", JOptionPane.WARNING_MESSAGE);
         }
     }
 

@@ -18,11 +18,11 @@ public final class VersionIndex {
 
     @JsonCreator
     public VersionIndex(
-            @JsonProperty("schemaVersion") int schemaVersion,
-            @JsonProperty("maxRetention") int maxRetention,
-            @JsonProperty("storageLocation") String storageLocation,
-            @JsonProperty("versions") List<VersionEntry> versions,
-            @JsonProperty("pinnedVersions") Set<Integer> pinnedVersions) {
+        @JsonProperty("schemaVersion") int schemaVersion,
+        @JsonProperty("maxRetention") int maxRetention,
+        @JsonProperty("storageLocation") String storageLocation,
+        @JsonProperty("versions") List<VersionEntry> versions,
+        @JsonProperty("pinnedVersions") Set<Integer> pinnedVersions) {
         this.schemaVersion = schemaVersion;
         this.maxRetention = maxRetention;
         this.storageLocation = Objects.requireNonNull(storageLocation, "storageLocation must not be null");
@@ -107,9 +107,9 @@ public final class VersionIndex {
      */
     public int getNextVersionNumber() {
         return versions.stream()
-                .mapToInt(VersionEntry::getVersion)
-                .max()
-                .orElse(0) + 1;
+            .mapToInt(VersionEntry::getVersion)
+            .max()
+            .orElse(0) + 1;
     }
 
     /**

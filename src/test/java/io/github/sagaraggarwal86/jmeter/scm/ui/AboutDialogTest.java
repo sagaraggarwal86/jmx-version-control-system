@@ -29,7 +29,7 @@ class AboutDialogTest {
         AboutDialog.showDialog(null);
 
         optionPaneMock.verify(() ->
-                JOptionPane.showMessageDialog(eq(null), any(), eq("About — JVCS"), eq(JOptionPane.PLAIN_MESSAGE)));
+            JOptionPane.showMessageDialog(eq(null), any(), eq("About — JVCS"), eq(JOptionPane.PLAIN_MESSAGE)));
     }
 
     @Test
@@ -42,12 +42,12 @@ class AboutDialogTest {
         AboutDialog.showDialog(null);
 
         optionPaneMock.verify(() ->
-                JOptionPane.showMessageDialog(eq(null), argThat(arg -> {
-                    if (arg instanceof JPanel panel) {
-                        // Verify the panel has at least title and description labels
-                        return panel.getComponentCount() > 0;
-                    }
-                    return false;
-                }), anyString(), anyInt()));
+            JOptionPane.showMessageDialog(eq(null), argThat(arg -> {
+                if (arg instanceof JPanel panel) {
+                    // Verify the panel has at least title and description labels
+                    return panel.getComponentCount() > 0;
+                }
+                return false;
+            }), anyString(), anyInt()));
     }
 }

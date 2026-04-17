@@ -51,7 +51,7 @@ public final class LockManager {
                 }
                 if (!isStale(existing)) {
                     log.info("Lock held by PID {} on {} since {}",
-                            existing.getPid(), existing.getHostname(), existing.getTimestamp());
+                        existing.getPid(), existing.getHostname(), existing.getTimestamp());
                     return false;
                 }
                 log.info("Stale lock detected (PID {} on {}), overriding", existing.getPid(), existing.getHostname());
@@ -152,7 +152,7 @@ public final class LockManager {
 
     private boolean isCurrentProcess(LockInfo lockInfo) {
         return lockInfo.getPid() == ProcessHandle.current().pid()
-                && CURRENT_HOSTNAME.equals(lockInfo.getHostname());
+            && CURRENT_HOSTNAME.equals(lockInfo.getHostname());
     }
 
     private boolean isStale(LockInfo lockInfo) {

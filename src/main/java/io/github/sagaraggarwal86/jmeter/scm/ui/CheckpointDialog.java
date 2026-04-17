@@ -29,7 +29,7 @@ public final class CheckpointDialog {
         noteField.setDocument(new javax.swing.text.PlainDocument() {
             @Override
             public void insertString(int offs, String str, javax.swing.text.AttributeSet a)
-                    throws javax.swing.text.BadLocationException {
+                throws javax.swing.text.BadLocationException {
                 if (str == null) return;
                 if (getLength() + str.length() <= 500) {
                     super.insertString(offs, str, a);
@@ -43,8 +43,8 @@ public final class CheckpointDialog {
         panel.add(freezeCheckBox, BorderLayout.SOUTH);
 
         int result = JOptionPane.showConfirmDialog(parent, panel,
-                "Create Checkpoint — JVCS",
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            "Create Checkpoint — JVCS",
+            JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
             String note = noteField.getText().trim();

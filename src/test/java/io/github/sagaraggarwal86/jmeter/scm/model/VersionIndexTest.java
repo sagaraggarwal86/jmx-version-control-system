@@ -12,7 +12,7 @@ class VersionIndexTest {
 
     private static VersionEntry createEntry(int version) {
         return new VersionEntry(version, "v" + String.format("%03d", version) + ".jmxv",
-                LocalDateTime.now(), TriggerType.CHECKPOINT, null, "checksum" + version);
+            LocalDateTime.now(), TriggerType.CHECKPOINT, null, "checksum" + version);
     }
 
     @Test

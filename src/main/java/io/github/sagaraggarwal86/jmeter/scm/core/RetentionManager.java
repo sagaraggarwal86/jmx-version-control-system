@@ -49,7 +49,7 @@ public final class RetentionManager {
         while (pruned < excess && i < index.getVersions().size()) {
             VersionEntry candidate = index.getVersions().get(i);
             if (index.isPinned(candidate.getVersion())
-                    || (latest != null && candidate.getVersion() == latest.getVersion())) {
+                || (latest != null && candidate.getVersion() == latest.getVersion())) {
                 i++;
                 continue;
             }
@@ -68,7 +68,7 @@ public final class RetentionManager {
 
         if (pruned < excess) {
             log.info("Could only prune {} of {} excess versions ({} pinned)",
-                    pruned, excess, excess - pruned);
+                pruned, excess, excess - pruned);
         }
     }
 }

@@ -56,7 +56,7 @@ class SaveCommandWrapperTest {
     @Test
     void doActionHandlesExceptionGracefully() {
         doThrow(new RuntimeException("test failure"))
-                .when(mockInitializer).ensureInitializedWithContext();
+            .when(mockInitializer).ensureInitializedWithContext();
 
         SaveCommandWrapper wrapper = new SaveCommandWrapper();
         ActionEvent event = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, ActionNames.SAVE);

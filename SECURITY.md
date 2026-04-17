@@ -38,8 +38,7 @@ the user's file system permissions.
 1. **Do not** open a public GitHub issue.
 2. Use
    GitHub's [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
-   on this repository with a description, reproduction
-   steps, and potential impact.
+   on this repository. Include a description, reproduction steps, and potential impact.
 
 ## Dependencies
 

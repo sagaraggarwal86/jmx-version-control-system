@@ -1,3 +1,4 @@
+# ── Maven ──────────────────────────────────────────
 target/
 pom.xml.tag
 pom.xml.releaseBackup
@@ -10,12 +11,42 @@ buildNumber.properties
 # https://maven.apache.org/wrapper/#usage-without-binary-jar
 .mvn/wrapper/maven-wrapper.jar
 
-# Eclipse m2e generated files
-# Eclipse Core
-.project
-# JDT-specific (Eclipse Java Development Tools)
-.classpath
-
-# IntelliJ IDEA
+# ── IntelliJ IDEA ──────────────────────────────────
 .idea/
 *.iml
+out/
+
+# ── Eclipse ────────────────────────────────────────
+.classpath
+.project
+.settings/
+
+# ── VS Code ────────────────────────────────────────
+.vscode/
+
+# ── OS files ───────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Environment / secrets ──────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Credentials ────────────────────────────────────
+*.pem
+*.key
+*.p12
+credentials.json
+service-account*.json
+
+# ── GPG ────────────────────────────────────────────
+*.gpg
+secring.*
+
+# ── Claude Code ────────────────────────────────────
+.claude/
+
+# ── Logs ───────────────────────────────────────────
+*.log

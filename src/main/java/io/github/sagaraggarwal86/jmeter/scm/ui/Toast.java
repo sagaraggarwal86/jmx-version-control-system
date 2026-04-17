@@ -47,7 +47,7 @@ public final class Toast {
             } else {
                 Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
                 toast.setLocation(screen.width - toast.getWidth() - 20,
-                        screen.height - toast.getHeight() - 60);
+                    screen.height - toast.getHeight() - 60);
             }
 
             toast.setAlwaysOnTop(true);

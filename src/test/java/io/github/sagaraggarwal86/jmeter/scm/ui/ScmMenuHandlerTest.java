@@ -121,8 +121,8 @@ class ScmMenuHandlerTest {
             ScmMenuHandler.triggerLock(mockInitializer);
 
             optionPaneMock.verify(() ->
-                    JOptionPane.showMessageDialog(any(), contains("No active test plan"),
-                            eq("JVCS"), eq(JOptionPane.WARNING_MESSAGE)));
+                JOptionPane.showMessageDialog(any(), contains("No active test plan"),
+                    eq("JVCS"), eq(JOptionPane.WARNING_MESSAGE)));
         }
     }
 
@@ -136,8 +136,8 @@ class ScmMenuHandlerTest {
             ScmMenuHandler.triggerLock(mockInitializer);
 
             optionPaneMock.verify(() ->
-                    JOptionPane.showMessageDialog(any(), contains("No active test plan"),
-                            eq("JVCS"), eq(JOptionPane.WARNING_MESSAGE)));
+                JOptionPane.showMessageDialog(any(), contains("No active test plan"),
+                    eq("JVCS"), eq(JOptionPane.WARNING_MESSAGE)));
         }
     }
 
@@ -153,8 +153,8 @@ class ScmMenuHandlerTest {
             ScmMenuHandler.triggerLock(mockInitializer);
 
             optionPaneMock.verify(() ->
-                    JOptionPane.showMessageDialog(any(), contains("already hold the lock"),
-                            eq("JVCS"), eq(JOptionPane.INFORMATION_MESSAGE)));
+                JOptionPane.showMessageDialog(any(), contains("already hold the lock"),
+                    eq("JVCS"), eq(JOptionPane.INFORMATION_MESSAGE)));
         }
     }
 
@@ -166,8 +166,8 @@ class ScmMenuHandlerTest {
             ScmMenuHandler.triggerCheckpoint(mockInitializer);
 
             optionPaneMock.verify(() ->
-                    JOptionPane.showMessageDialog(any(), contains("No active test plan"),
-                            eq("JVCS"), eq(JOptionPane.WARNING_MESSAGE)));
+                JOptionPane.showMessageDialog(any(), contains("No active test plan"),
+                    eq("JVCS"), eq(JOptionPane.WARNING_MESSAGE)));
         }
     }
 
@@ -183,8 +183,8 @@ class ScmMenuHandlerTest {
             ScmMenuHandler.triggerCheckpoint(mockInitializer);
 
             optionPaneMock.verify(() ->
-                    JOptionPane.showMessageDialog(any(), contains("Cannot create checkpoint"),
-                            eq("JVCS"), eq(JOptionPane.WARNING_MESSAGE)));
+                JOptionPane.showMessageDialog(any(), contains("Cannot create checkpoint"),
+                    eq("JVCS"), eq(JOptionPane.WARNING_MESSAGE)));
         }
     }
 

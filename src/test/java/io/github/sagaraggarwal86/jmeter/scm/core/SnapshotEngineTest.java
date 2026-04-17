@@ -40,7 +40,7 @@ class SnapshotEngineTest {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
         VersionEntry entry = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
-                TriggerType.CHECKPOINT, null);
+            TriggerType.CHECKPOINT, null);
 
         assertNotNull(entry);
         assertEquals(1, entry.getVersion());
@@ -56,7 +56,7 @@ class SnapshotEngineTest {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
         VersionEntry entry = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
-                TriggerType.CHECKPOINT, "Before load test");
+            TriggerType.CHECKPOINT, "Before load test");
 
         assertNotNull(entry);
         assertEquals("Before load test", entry.getNote());
@@ -68,12 +68,12 @@ class SnapshotEngineTest {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
         VersionEntry first = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
-                TriggerType.AUTO_CHECKPOINT, null);
+            TriggerType.AUTO_CHECKPOINT, null);
         assertNotNull(first);
 
         // Same content — AUTO_CHECKPOINT should skip
         VersionEntry second = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
-                TriggerType.AUTO_CHECKPOINT, null);
+            TriggerType.AUTO_CHECKPOINT, null);
         assertNull(second);
         assertEquals(1, index.getVersions().size());
     }
@@ -83,12 +83,12 @@ class SnapshotEngineTest {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
         VersionEntry first = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
-                TriggerType.CHECKPOINT, null);
+            TriggerType.CHECKPOINT, null);
         assertNotNull(first);
 
         // Same content — manual CHECKPOINT should still create
         VersionEntry second = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
-                TriggerType.CHECKPOINT, null);
+            TriggerType.CHECKPOINT, null);
         assertNotNull(second);
         assertEquals(2, index.getVersions().size());
     }
@@ -102,7 +102,7 @@ class SnapshotEngineTest {
         Files.writeString(jmxFile, "<jmeterTestPlan>modified</jmeterTestPlan>");
 
         VersionEntry second = snapshotEngine.createSnapshot(jmxFile, storageDir, index,
-                TriggerType.CHECKPOINT, null);
+            TriggerType.CHECKPOINT, null);
         assertNotNull(second);
         assertEquals(2, index.getVersions().size());
     }
@@ -149,7 +149,7 @@ class SnapshotEngineTest {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
         assertThrows(IllegalArgumentException.class, () ->
-                snapshotEngine.restore(jmxFile, storageDir, index, 99));
+            snapshotEngine.restore(jmxFile, storageDir, index, 99));
     }
 
     @Test
@@ -174,7 +174,7 @@ class SnapshotEngineTest {
         snapshotEngine.createSnapshot(jmxFile, storageDir, index, TriggerType.CHECKPOINT, null);
 
         assertThrows(IllegalStateException.class, () ->
-                snapshotEngine.deleteVersion(storageDir, index, 1));
+            snapshotEngine.deleteVersion(storageDir, index, 1));
     }
 
     @Test
@@ -182,6 +182,6 @@ class SnapshotEngineTest {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
 
         assertThrows(IllegalArgumentException.class, () ->
-                snapshotEngine.deleteVersion(storageDir, index, 99));
+            snapshotEngine.deleteVersion(storageDir, index, 99));
     }
 }

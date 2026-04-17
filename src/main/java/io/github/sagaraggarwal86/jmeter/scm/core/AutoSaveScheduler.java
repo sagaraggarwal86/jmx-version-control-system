@@ -77,7 +77,7 @@ public final class AutoSaveScheduler {
         try {
             // Save in-memory state to disk on EDT (must be on EDT for JMeter's model)
             ActionRouter.getInstance().doActionNow(
-                    new ActionEvent(this, ActionEvent.ACTION_PERFORMED, ActionNames.SAVE));
+                new ActionEvent(this, ActionEvent.ACTION_PERFORMED, ActionNames.SAVE));
         } catch (Exception e) {
             log.warn("Auto-checkpoint save failed: {}", e.getMessage());
             running.set(false);

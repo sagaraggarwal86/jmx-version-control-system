@@ -209,8 +209,8 @@ class ScmConfigManagerTest {
     @Test
     void ensureDefaultsPersistedSkipsExisting() throws IOException {
         Files.writeString(userPropsFile, "scm.storage.location=/custom\nscm.max.retention=50\n" +
-                "scm.lock.stale.minutes=120\nscm.autosave.enabled=true\n" +
-                "scm.autosave.interval.minutes=10\nscm.toolbar.visible=false\n");
+            "scm.lock.stale.minutes=120\nscm.autosave.enabled=true\n" +
+            "scm.autosave.interval.minutes=10\nscm.toolbar.visible=false\n");
 
         ScmConfigManager.ensureDefaultsPersisted();
 
