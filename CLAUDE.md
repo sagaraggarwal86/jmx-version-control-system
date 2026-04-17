@@ -40,7 +40,7 @@ behavior), stability over novelty, correctness over features.
   recommendation. Trivial choices use prose.
 
   | Option | Risk | Effort | Impact | Recommendation |
-        |--------|------|--------|--------|----------------|
+          |--------|------|--------|--------|----------------|
 
 ## Examples
 
