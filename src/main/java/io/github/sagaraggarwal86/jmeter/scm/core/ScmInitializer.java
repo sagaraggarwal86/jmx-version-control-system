@@ -108,23 +108,23 @@ public final class ScmInitializer {
                 String lockDetails = "";
                 if (lockInfo != null) {
                     lockDetails = "\n\nLocked by:\n" +
-                            "  Host: " + lockInfo.getHostname() + "\n" +
-                            "  PID: " + lockInfo.getPid() + "\n" +
-                            "  Since: " + lockInfo.getTimestamp();
+                        "  Host: " + lockInfo.getHostname() + "\n" +
+                        "  PID: " + lockInfo.getPid() + "\n" +
+                        "  Since: " + lockInfo.getTimestamp();
                 }
                 String msg = "This test plan is locked by another JMeter instance.\n" +
-                        "You can view and export versions but cannot create snapshots." +
-                        lockDetails;
+                    "You can view and export versions but cannot create snapshots." +
+                    lockDetails;
                 SwingUtilities.invokeLater(() ->
-                        JOptionPane.showMessageDialog(null, msg,
-                                "JVCS — Read-Only Mode", JOptionPane.INFORMATION_MESSAGE));
+                    JOptionPane.showMessageDialog(null, msg,
+                        "JVCS — Read-Only Mode", JOptionPane.INFORMATION_MESSAGE));
             }
         } catch (Exception e) {
             log.error("Failed to initialize SCM for {}: {}", jmxFile, e.getMessage(), e);
             SwingUtilities.invokeLater(() ->
-                    JOptionPane.showMessageDialog(null,
-                            "JVCS initialization failed: " + e.getMessage(),
-                            "JVCS", JOptionPane.ERROR_MESSAGE));
+                JOptionPane.showMessageDialog(null,
+                    "JVCS initialization failed: " + e.getMessage(),
+                    "JVCS", JOptionPane.ERROR_MESSAGE));
         }
     }
 
@@ -247,7 +247,7 @@ public final class ScmInitializer {
         ActionMap actionMap = rootPane.getActionMap();
 
         inputMap.put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_H,
-                java.awt.event.InputEvent.CTRL_DOWN_MASK), "scm.openHistory");
+            java.awt.event.InputEvent.CTRL_DOWN_MASK), "scm.openHistory");
         actionMap.put("scm.openHistory", new javax.swing.AbstractAction() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
@@ -258,7 +258,7 @@ public final class ScmInitializer {
         });
 
         inputMap.put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_K,
-                java.awt.event.InputEvent.CTRL_DOWN_MASK), "scm.createCheckpoint");
+            java.awt.event.InputEvent.CTRL_DOWN_MASK), "scm.createCheckpoint");
         actionMap.put("scm.createCheckpoint", new javax.swing.AbstractAction() {
             @Override
             public void actionPerformed(java.awt.event.ActionEvent e) {
@@ -327,12 +327,12 @@ public final class ScmInitializer {
 
         // Order: C, H, I, L, D
         JButton checkpointBtn = createToolbarButton("C", "Save Checkpoint (Ctrl+K)",
-                () -> ScmMenuHandler.triggerCheckpoint(this));
+            () -> ScmMenuHandler.triggerCheckpoint(this));
         toolbar.add(checkpointBtn, insertIndex++);
         scmToolbarComponents.add(checkpointBtn);
 
         JButton historyBtn = createToolbarButton("H", "Show History (Ctrl+H)",
-                () -> ScmMenuHandler.triggerShowHistory(this));
+            () -> ScmMenuHandler.triggerShowHistory(this));
         toolbar.add(historyBtn, insertIndex++);
         scmToolbarComponents.add(historyBtn);
 
@@ -341,12 +341,12 @@ public final class ScmInitializer {
         scmToolbarComponents.add(dirtyIndicator);
 
         lockButton = createToolbarButton("L", "Version Control: Lock active",
-                () -> ScmMenuHandler.triggerLock(this));
+            () -> ScmMenuHandler.triggerLock(this));
         toolbar.add(lockButton, insertIndex++);
         scmToolbarComponents.add(lockButton);
 
         JButton deleteBtn = createToolbarButton("D", "Delete Versions",
-                () -> ScmMenuHandler.triggerDeleteVersions(this));
+            () -> ScmMenuHandler.triggerDeleteVersions(this));
         toolbar.add(deleteBtn, insertIndex);
         scmToolbarComponents.add(deleteBtn);
 
@@ -396,7 +396,7 @@ public final class ScmInitializer {
                 if (splitPane != null) {
                     Component bottomComponent = splitPane.getBottomComponent();
                     JSplitPane bottomSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-                            bottomComponent, historyPanel);
+                        bottomComponent, historyPanel);
                     bottomSplit.setResizeWeight(1.0);
                     bottomSplit.setOneTouchExpandable(true);
                     bottomSplit.setContinuousLayout(true);

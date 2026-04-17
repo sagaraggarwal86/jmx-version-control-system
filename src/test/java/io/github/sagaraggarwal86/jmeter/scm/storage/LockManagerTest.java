@@ -78,13 +78,13 @@ class LockManagerTest {
     void staleLockOverridden() throws Exception {
         // Write a lock with a very old timestamp (stale)
         String staleLock = """
-                {
-                  "pid": 99999,
-                  "hostname": "OTHER-HOST",
-                  "timestamp": "2020-01-01T00:00:00",
-                  "jmeterVersion": "5.6.3"
-                }
-                """;
+            {
+              "pid": 99999,
+              "hostname": "OTHER-HOST",
+              "timestamp": "2020-01-01T00:00:00",
+              "jmeterVersion": "5.6.3"
+            }
+            """;
         Files.createDirectories(tempDir);
         Files.writeString(tempDir.resolve(".lock"), staleLock);
 
@@ -99,13 +99,13 @@ class LockManagerTest {
     void nonStaleLockBlocksAcquisition() throws Exception {
         // Write a lock with current timestamp from another PID
         String recentLock = String.format("""
-                {
-                  "pid": 99999,
-                  "hostname": "OTHER-HOST",
-                  "timestamp": "%s",
-                  "jmeterVersion": "5.6.3"
-                }
-                """, LocalDateTime.now().toString());
+            {
+              "pid": 99999,
+              "hostname": "OTHER-HOST",
+              "timestamp": "%s",
+              "jmeterVersion": "5.6.3"
+            }
+            """, LocalDateTime.now().toString());
         Files.createDirectories(tempDir);
         Files.writeString(tempDir.resolve(".lock"), recentLock);
 
@@ -116,13 +116,13 @@ class LockManagerTest {
     @Test
     void releaseDoesNotRemoveOtherProcessLock() throws Exception {
         String otherLock = String.format("""
-                {
-                  "pid": 99999,
-                  "hostname": "OTHER-HOST",
-                  "timestamp": "%s",
-                  "jmeterVersion": "5.6.3"
-                }
-                """, LocalDateTime.now().toString());
+            {
+              "pid": 99999,
+              "hostname": "OTHER-HOST",
+              "timestamp": "%s",
+              "jmeterVersion": "5.6.3"
+            }
+            """, LocalDateTime.now().toString());
         Files.createDirectories(tempDir);
         Files.writeString(tempDir.resolve(".lock"), otherLock);
 
@@ -135,13 +135,13 @@ class LockManagerTest {
     @Test
     void forceReleaseOverridesOtherProcessLock() throws Exception {
         String otherLock = String.format("""
-                {
-                  "pid": 99999,
-                  "hostname": "OTHER-HOST",
-                  "timestamp": "%s",
-                  "jmeterVersion": "5.6.3"
-                }
-                """, LocalDateTime.now().toString());
+            {
+              "pid": 99999,
+              "hostname": "OTHER-HOST",
+              "timestamp": "%s",
+              "jmeterVersion": "5.6.3"
+            }
+            """, LocalDateTime.now().toString());
         Files.createDirectories(tempDir);
         Files.writeString(tempDir.resolve(".lock"), otherLock);
 

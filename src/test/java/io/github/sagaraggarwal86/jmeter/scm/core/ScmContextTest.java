@@ -219,7 +219,7 @@ class ScmContextTest {
         // Write a foreign non-stale lock to simulate another holder
         Path lockFile = ctx.getStorageDir().resolve(".lock");
         Files.writeString(lockFile, "{\"pid\":99999,\"hostname\":\"otherhost\"," +
-                "\"timestamp\":\"" + java.time.LocalDateTime.now() + "\",\"jmeterVersion\":\"5.6.3\"}");
+            "\"timestamp\":\"" + java.time.LocalDateTime.now() + "\",\"jmeterVersion\":\"5.6.3\"}");
 
         // tryAcquire fails → switches to read-only
         assertFalse(ctx.tryAcquireLock());
@@ -253,7 +253,7 @@ class ScmContextTest {
         // Write a foreign lock
         Path lockFile = ctx.getStorageDir().resolve(".lock");
         Files.writeString(lockFile, "{\"pid\":99999,\"hostname\":\"otherhost\"," +
-                "\"timestamp\":\"" + java.time.LocalDateTime.now() + "\",\"jmeterVersion\":\"5.6.3\"}");
+            "\"timestamp\":\"" + java.time.LocalDateTime.now() + "\",\"jmeterVersion\":\"5.6.3\"}");
 
         boolean result = ctx.tryAcquireLock();
         assertFalse(result);
@@ -349,7 +349,7 @@ class ScmContextTest {
         // Write a foreign lock to make next acquire fail
         Path lockFile = ctx.getStorageDir().resolve(".lock");
         Files.writeString(lockFile, "{\"pid\":99999,\"hostname\":\"otherhost\"," +
-                "\"timestamp\":\"" + java.time.LocalDateTime.now() + "\",\"jmeterVersion\":\"5.6.3\"}");
+            "\"timestamp\":\"" + java.time.LocalDateTime.now() + "\",\"jmeterVersion\":\"5.6.3\"}");
         ctx.tryAcquireLock(); // switches to read-only
 
         assertThrows(IOException.class, () -> ctx.createSnapshot(TriggerType.CHECKPOINT, null));
@@ -373,7 +373,7 @@ class ScmContextTest {
         Path historyRoot = tempDir.resolve(".history");
         Files.createDirectories(historyRoot);
         Files.writeString(historyRoot.resolve("index.json"),
-                "{\"schemaVersion\":1,\"maxRetention\":20,\"storageLocation\":\".history\",\"versions\":[],\"pinnedVersions\":[]}");
+            "{\"schemaVersion\":1,\"maxRetention\":20,\"storageLocation\":\".history\",\"versions\":[],\"pinnedVersions\":[]}");
         Files.writeString(historyRoot.resolve("test_001.jmxv"), "snapshot");
 
         ScmContext ctx = new ScmContext(jmxFile, indexManager, lockManager);
@@ -461,7 +461,7 @@ class ScmContextTest {
         // Write a foreign lock
         Path lockFile = ctx.getStorageDir().resolve(".lock");
         Files.writeString(lockFile, "{\"pid\":99999,\"hostname\":\"otherhost\"," +
-                "\"timestamp\":\"" + java.time.LocalDateTime.now() + "\",\"jmeterVersion\":\"5.6.3\"}");
+            "\"timestamp\":\"" + java.time.LocalDateTime.now() + "\",\"jmeterVersion\":\"5.6.3\"}");
         ctx.tryAcquireLock(); // switches to read-only
         assertTrue(ctx.isReadOnly());
 

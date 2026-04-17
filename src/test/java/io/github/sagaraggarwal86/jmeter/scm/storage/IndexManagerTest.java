@@ -40,7 +40,7 @@ class IndexManagerTest {
     void saveAndLoadRoundTrip() throws IOException {
         VersionIndex index = VersionIndex.createDefault(20, ".history");
         index.addVersion(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
-                TriggerType.CHECKPOINT, "test note", "abc123"));
+            TriggerType.CHECKPOINT, "test note", "abc123"));
 
         indexManager.save(tempDir, index);
 
@@ -59,7 +59,7 @@ class IndexManagerTest {
         VersionIndex index = indexManager.load(tempDir);
 
         VersionEntry entry = new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
-                TriggerType.CHECKPOINT, null, "hash1");
+            TriggerType.CHECKPOINT, null, "hash1");
         indexManager.addVersion(tempDir, index, entry);
 
         assertEquals(1, index.getVersions().size());
@@ -76,9 +76,9 @@ class IndexManagerTest {
     void removeVersionDeletesEntryAndSaves() throws IOException {
         VersionIndex index = indexManager.load(tempDir);
         index.addVersion(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
-                TriggerType.CHECKPOINT, null, "a"));
+            TriggerType.CHECKPOINT, null, "a"));
         index.addVersion(new VersionEntry(2, "v002.jmxv", LocalDateTime.now(),
-                TriggerType.CHECKPOINT, null, "b"));
+            TriggerType.CHECKPOINT, null, "b"));
         indexManager.save(tempDir, index);
 
         indexManager.removeVersion(tempDir, index, 1);
@@ -92,9 +92,9 @@ class IndexManagerTest {
         // Create index with entry pointing to non-existent file
         VersionIndex index = VersionIndex.createDefault(20, ".history");
         index.addVersion(new VersionEntry(1, "v001.jmxv", LocalDateTime.now(),
-                TriggerType.CHECKPOINT, null, "abc"));
+            TriggerType.CHECKPOINT, null, "abc"));
         index.addVersion(new VersionEntry(2, "v002.jmxv", LocalDateTime.now(),
-                TriggerType.CHECKPOINT, null, "def"));
+            TriggerType.CHECKPOINT, null, "def"));
         indexManager.save(tempDir, index);
 
         // Only create v002, not v001
@@ -129,14 +129,14 @@ class IndexManagerTest {
     void unknownJsonPropertiesIgnored() throws IOException {
         // R11: FAIL_ON_UNKNOWN_PROPERTIES = false
         String json = """
-                {
-                  "schemaVersion": 1,
-                  "maxRetention": 20,
-                  "storageLocation": ".history",
-                  "futureField": "should be ignored",
-                  "versions": []
-                }
-                """;
+            {
+              "schemaVersion": 1,
+              "maxRetention": 20,
+              "storageLocation": ".history",
+              "futureField": "should be ignored",
+              "versions": []
+            }
+            """;
         Files.writeString(tempDir.resolve("index.json"), json);
 
         VersionIndex loaded = indexManager.load(tempDir);

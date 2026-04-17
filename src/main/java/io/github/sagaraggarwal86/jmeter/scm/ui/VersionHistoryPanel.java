@@ -145,12 +145,12 @@ public final class VersionHistoryPanel extends JPanel {
 
         // Column header tooltips
         String[] tooltips = {
-                "Select versions for bulk deletion",
-                "Version number (monotonically increasing)",
-                "What created this snapshot: CHECKPOINT, AUTO_CHECKPOINT, or RESTORE",
-                "When this snapshot was created",
-                "Optional note — double-click to edit",
-                "Restore, Freeze/Unfreeze, or Export this version"
+            "Select versions for bulk deletion",
+            "Version number (monotonically increasing)",
+            "What created this snapshot: CHECKPOINT, AUTO_CHECKPOINT, or RESTORE",
+            "When this snapshot was created",
+            "Optional note — double-click to edit",
+            "Restore, Freeze/Unfreeze, or Export this version"
         };
         table.getTableHeader().setDefaultRenderer(new TooltipHeaderRenderer(table, tooltips));
 
@@ -188,8 +188,8 @@ public final class VersionHistoryPanel extends JPanel {
         table.getColumnModel().getColumn(5).setCellEditor(new ActionCellEditor());
 
         JScrollPane scrollPane = new JScrollPane(table,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+            JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         add(scrollPane, BorderLayout.CENTER);
 
         // Legend
@@ -274,16 +274,16 @@ public final class VersionHistoryPanel extends JPanel {
         int maxRetention = ScmConfigManager.getMaxRetention(index);
         if (index.getVersions().size() >= maxRetention) {
             VersionEntry oldestPruneable = index.getVersions().stream()
-                    .filter(e -> !index.isPinned(e.getVersion()))
-                    .filter(e -> latest == null || e.getVersion() != latest.getVersion())
-                    .findFirst()
-                    .orElse(null);
+                .filter(e -> !index.isPinned(e.getVersion()))
+                .filter(e -> latest == null || e.getVersion() != latest.getVersion())
+                .findFirst()
+                .orElse(null);
             if (oldestPruneable != null) {
                 retentionLabel.setText("<html>Retention: " + maxRetention
-                        + " <b><font color='red'>\u26A0 At limit. Next checkpoint will replace oldest version.</font></b></html>");
+                    + " <b><font color='red'>\u26A0 At limit. Next checkpoint will replace oldest version.</font></b></html>");
             } else {
                 retentionLabel.setText("<html>Retention: " + maxRetention
-                        + " <b><font color='red'>\u26A0 At limit. All versions frozen.</font></b></html>");
+                    + " <b><font color='red'>\u26A0 At limit. All versions frozen.</font></b></html>");
             }
         } else {
             retentionLabel.setText("Retention: " + maxRetention);
@@ -328,16 +328,16 @@ public final class VersionHistoryPanel extends JPanel {
         ScmContext context = initializer.getCurrentContext();
         if (context == null || context.isReadOnly()) {
             JOptionPane.showMessageDialog(this,
-                    "No active test plan or read-only mode.",
-                    "JVCS", JOptionPane.WARNING_MESSAGE);
+                "No active test plan or read-only mode.",
+                "JVCS", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         Set<Integer> selected = tableModel.getSelectedVersions();
         if (selected.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                    "No versions selected. Use the checkboxes to select versions for deletion.",
-                    "JVCS", JOptionPane.INFORMATION_MESSAGE);
+                "No versions selected. Use the checkboxes to select versions for deletion.",
+                "JVCS", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
@@ -363,7 +363,7 @@ public final class VersionHistoryPanel extends JPanel {
             if (skippedLatest > 0) msg.append("\n• Latest version cannot be deleted.");
             if (skippedFrozen > 0) msg.append("\n• ").append(skippedFrozen).append(" frozen version(s) skipped.");
             JOptionPane.showMessageDialog(this, msg.toString(),
-                    "JVCS", JOptionPane.INFORMATION_MESSAGE);
+                "JVCS", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
@@ -376,7 +376,7 @@ public final class VersionHistoryPanel extends JPanel {
         confirmMsg.append("\n\nThis action cannot be undone.");
 
         int confirm = JOptionPane.showConfirmDialog(this, confirmMsg.toString(),
-                "Delete Versions", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            "Delete Versions", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (confirm != JOptionPane.YES_OPTION) return;
 
         SwingWorker<Integer, Void> worker = new SwingWorker<>() {
@@ -404,8 +404,8 @@ public final class VersionHistoryPanel extends JPanel {
                     Throwable cause = e.getCause() != null ? e.getCause() : e;
                     log.error("Delete selected versions failed: {}", cause.getMessage(), e);
                     JOptionPane.showMessageDialog(VersionHistoryPanel.this,
-                            "Delete failed: " + cause.getMessage(),
-                            "JVCS", JOptionPane.ERROR_MESSAGE);
+                        "Delete failed: " + cause.getMessage(),
+                        "JVCS", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
@@ -427,25 +427,25 @@ public final class VersionHistoryPanel extends JPanel {
         if (context == null) return;
         if (context.isReadOnly()) {
             JOptionPane.showMessageDialog(this,
-                    "Cannot restore — this test plan is in read-only mode.\n" +
-                            "Another JMeter instance holds the lock.",
-                    "JVCS", JOptionPane.WARNING_MESSAGE);
+                "Cannot restore — this test plan is in read-only mode.\n" +
+                    "Another JMeter instance holds the lock.",
+                "JVCS", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         if (context.isAtUnprunableCapacity()) {
             JOptionPane.showMessageDialog(this,
-                    "Cannot restore — at retention limit and all versions are frozen.\n" +
-                            "Increase retention limit or unfreeze a version.",
-                    "JVCS", JOptionPane.WARNING_MESSAGE);
+                "Cannot restore — at retention limit and all versions are frozen.\n" +
+                    "Increase retention limit or unfreeze a version.",
+                "JVCS", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         VersionEntry entry = tableModel.getEntryAt(row);
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Restore to version " + entry.getVersion() + "?\n" +
-                        "Current state will be auto-saved before restoring.",
-                "Confirm Restore", JOptionPane.YES_NO_OPTION);
+            "Restore to version " + entry.getVersion() + "?\n" +
+                "Current state will be auto-saved before restoring.",
+            "Confirm Restore", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
 
         Path jmxFile = context.getJmxFile();
@@ -467,8 +467,8 @@ public final class VersionHistoryPanel extends JPanel {
                     Throwable cause = e.getCause() != null ? e.getCause() : e;
                     log.warn("Restore failed: {}", cause.getMessage());
                     JOptionPane.showMessageDialog(VersionHistoryPanel.this,
-                            "Restore failed: " + cause.getMessage(),
-                            "JVCS", JOptionPane.ERROR_MESSAGE);
+                        "Restore failed: " + cause.getMessage(),
+                        "JVCS", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
@@ -509,8 +509,8 @@ public final class VersionHistoryPanel extends JPanel {
                     // create a redundant version from the re-serialized output.
                     try {
                         ActionRouter.getInstance().doActionNow(
-                                new java.awt.event.ActionEvent(this,
-                                        java.awt.event.ActionEvent.ACTION_PERFORMED, ActionNames.SAVE));
+                            new java.awt.event.ActionEvent(this,
+                                java.awt.event.ActionEvent.ACTION_PERFORMED, ActionNames.SAVE));
                         ScmContext ctx = initializer.getCurrentContext();
                         if (ctx != null && !ctx.isDisposed()) {
                             ctx.getDirtyTracker().reset();
@@ -524,9 +524,9 @@ public final class VersionHistoryPanel extends JPanel {
                 } catch (Exception e) {
                     log.warn("Auto-reload failed: {}", e.getMessage());
                     JOptionPane.showMessageDialog(VersionHistoryPanel.this,
-                            "Restored successfully but auto-reload failed.\n" +
-                                    "Please reopen the file manually (Ctrl+O).",
-                            "JVCS", JOptionPane.WARNING_MESSAGE);
+                        "Restored successfully but auto-reload failed.\n" +
+                            "Please reopen the file manually (Ctrl+O).",
+                        "JVCS", JOptionPane.WARNING_MESSAGE);
                 }
             }
         };
@@ -560,14 +560,14 @@ public final class VersionHistoryPanel extends JPanel {
                 try {
                     get();
                     AuditLogger.logExport(context.getStorageDir(), entry.getVersion(),
-                            destination.getFileName().toString());
+                        destination.getFileName().toString());
                     Toast.show("Exported v" + entry.getVersion() + " to " + destination.getFileName());
                 } catch (Exception e) {
                     Throwable cause = e.getCause() != null ? e.getCause() : e;
                     log.warn("Export failed: {}", cause.getMessage());
                     JOptionPane.showMessageDialog(VersionHistoryPanel.this,
-                            "Export failed: " + cause.getMessage(),
-                            "JVCS", JOptionPane.ERROR_MESSAGE);
+                        "Export failed: " + cause.getMessage(),
+                        "JVCS", JOptionPane.ERROR_MESSAGE);
                 }
             }
         };
@@ -635,10 +635,10 @@ public final class VersionHistoryPanel extends JPanel {
             this.entries = new ArrayList<>(entries);
             if (!selectedVersions.isEmpty()) {
                 selectedVersions.retainAll(
-                        entries.stream()
-                                .map(VersionEntry::getVersion)
-                                .filter(this::isSelectable)
-                                .collect(Collectors.toSet()));
+                    entries.stream()
+                        .map(VersionEntry::getVersion)
+                        .filter(this::isSelectable)
+                        .collect(Collectors.toSet()));
             }
             fireTableDataChanged();
             if (ownerTable != null) {
@@ -676,7 +676,7 @@ public final class VersionHistoryPanel extends JPanel {
 
         private boolean isSelectable(int version) {
             return (latestVersion == null || version != latestVersion.getVersion())
-                    && !pinnedVersions.contains(version);
+                && !pinnedVersions.contains(version);
         }
 
         public Set<Integer> getSelectedVersions() {
@@ -781,7 +781,7 @@ public final class VersionHistoryPanel extends JPanel {
                                                        boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
             JLabel label = (JLabel) super.getTableCellRendererComponent(
-                    table, value, isSelected, hasFocus, row, column);
+                table, value, isSelected, hasFocus, row, column);
             if (value instanceof TriggerType trigger) {
                 label.setText(trigger.name());
                 label.setOpaque(true);
@@ -804,7 +804,7 @@ public final class VersionHistoryPanel extends JPanel {
                                                        boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
             JLabel label = (JLabel) super.getTableCellRendererComponent(
-                    table, value, isSelected, hasFocus, row, column);
+                table, value, isSelected, hasFocus, row, column);
             if (value instanceof LocalDateTime ts) {
                 label.setText(TimeFormatUtils.formatRelative(ts));
                 label.setToolTipText(ts.format(TimeFormatUtils.TIMESTAMP_FORMAT));
@@ -883,7 +883,7 @@ public final class VersionHistoryPanel extends JPanel {
                                                        boolean isSelected, boolean hasFocus,
                                                        int row, int column) {
             JLabel label = (JLabel) super.getTableCellRendererComponent(
-                    table, value, isSelected, hasFocus, row, column);
+                table, value, isSelected, hasFocus, row, column);
             String note = value != null ? value.toString() : "";
             if (tableModel.isLatest(row)) {
                 label.setText(note.isEmpty() ? "Current version" : "Current version \u2014 " + note);

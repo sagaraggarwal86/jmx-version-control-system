@@ -104,7 +104,7 @@ public final class ScmConfigManager {
 
             if (hasProperty(content, key)) {
                 content = content.replaceAll("(?m)^" + Pattern.quote(key) + "=.*$",
-                        java.util.regex.Matcher.quoteReplacement(line));
+                    java.util.regex.Matcher.quoteReplacement(line));
             } else {
                 // Append with SCM header if this is the first scm property
                 if (!content.contains("# JVCS")) {
@@ -149,25 +149,25 @@ public final class ScmConfigManager {
             if (toAppend.length() > 0) {
                 if (!content.contains("# JVCS")) {
                     toAppend.insert(0, "\n# JVCS Settings\n" +
-                            "# Recommended: Use Tools > Version Control > Settings for guided migration.\n" +
-                            "#\n" +
-                            "# Changing storage location via this file:\n" +
-                            "#   1. Close JMeter\n" +
-                            "#   2. Update scm.storage.location below\n" +
-                            "#   3. Manually move existing .history folders to the new location\n" +
-                            "#   4. Start JMeter — the new location is used automatically\n" +
-                            "#   Note: Changes while JMeter is running have no effect until restart.\n" +
-                            "#\n" +
-                            "# Property reference:\n" +
-                            "#   scm.storage.location          — Relative (to .jmx) or absolute path (default: .history)\n" +
-                            "#   scm.max.retention             — Max versions per test plan (default: 20)\n" +
-                            "#   scm.lock.stale.minutes        — Lock timeout in minutes (default: 60)\n" +
-                            "#   scm.autosave.enabled          — Enable auto-checkpoint (default: false)\n" +
-                            "#   scm.autosave.interval.minutes — Auto-checkpoint interval in minutes (default: 5)\n" +
-                            "#   scm.toolbar.visible           — Show SCM toolbar buttons (default: true)\n");
+                        "# Recommended: Use Tools > Version Control > Settings for guided migration.\n" +
+                        "#\n" +
+                        "# Changing storage location via this file:\n" +
+                        "#   1. Close JMeter\n" +
+                        "#   2. Update scm.storage.location below\n" +
+                        "#   3. Manually move existing .history folders to the new location\n" +
+                        "#   4. Start JMeter — the new location is used automatically\n" +
+                        "#   Note: Changes while JMeter is running have no effect until restart.\n" +
+                        "#\n" +
+                        "# Property reference:\n" +
+                        "#   scm.storage.location          — Relative (to .jmx) or absolute path (default: .history)\n" +
+                        "#   scm.max.retention             — Max versions per test plan (default: 20)\n" +
+                        "#   scm.lock.stale.minutes        — Lock timeout in minutes (default: 60)\n" +
+                        "#   scm.autosave.enabled          — Enable auto-checkpoint (default: false)\n" +
+                        "#   scm.autosave.interval.minutes — Auto-checkpoint interval in minutes (default: 5)\n" +
+                        "#   scm.toolbar.visible           — Show SCM toolbar buttons (default: true)\n");
                 }
                 Files.writeString(userProps, content + toAppend,
-                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
                 log.info("Default SCM properties written to user.properties");
             }
         } catch (IOException e) {

@@ -65,7 +65,7 @@ class VersionHistoryPanelTest {
 
     private VersionEntry createEntry(int version) {
         return new VersionEntry(version, "test_" + String.format("%03d", version) + ".jmxv",
-                LocalDateTime.now(), TriggerType.CHECKPOINT, null, "checksum" + version);
+            LocalDateTime.now(), TriggerType.CHECKPOINT, null, "checksum" + version);
     }
 
     private ScmContext createMockContext(List<VersionEntry> entries, Set<Integer> pinned) throws IOException {
@@ -126,8 +126,8 @@ class VersionHistoryPanelTest {
 
         // Table should have 3 rows (entries are reversed in display order)
         assertEquals(3, panel.getComponent(1) instanceof javax.swing.JScrollPane ?
-                ((javax.swing.JTable) ((javax.swing.JScrollPane) panel.getComponent(1)).getViewport().getView())
-                .getRowCount() : -1);
+            ((javax.swing.JTable) ((javax.swing.JScrollPane) panel.getComponent(1)).getViewport().getView())
+            .getRowCount() : -1);
     }
 
     @Test
@@ -206,8 +206,8 @@ class VersionHistoryPanelTest {
             panel.deleteSelectedVersions();
 
             optionPaneMock.verify(() ->
-                    javax.swing.JOptionPane.showMessageDialog(any(), contains("No active test plan"),
-                            eq("JVCS"), eq(javax.swing.JOptionPane.WARNING_MESSAGE)));
+                javax.swing.JOptionPane.showMessageDialog(any(), contains("No active test plan"),
+                    eq("JVCS"), eq(javax.swing.JOptionPane.WARNING_MESSAGE)));
         }
     }
 
@@ -221,8 +221,8 @@ class VersionHistoryPanelTest {
             panel.deleteSelectedVersions();
 
             optionPaneMock.verify(() ->
-                    javax.swing.JOptionPane.showMessageDialog(any(), contains("No active test plan"),
-                            eq("JVCS"), eq(javax.swing.JOptionPane.WARNING_MESSAGE)));
+                javax.swing.JOptionPane.showMessageDialog(any(), contains("No active test plan"),
+                    eq("JVCS"), eq(javax.swing.JOptionPane.WARNING_MESSAGE)));
         }
     }
 
@@ -238,8 +238,8 @@ class VersionHistoryPanelTest {
             panel.deleteSelectedVersions();
 
             optionPaneMock.verify(() ->
-                    javax.swing.JOptionPane.showMessageDialog(any(), contains("No versions selected"),
-                            eq("JVCS"), eq(javax.swing.JOptionPane.INFORMATION_MESSAGE)));
+                javax.swing.JOptionPane.showMessageDialog(any(), contains("No versions selected"),
+                    eq("JVCS"), eq(javax.swing.JOptionPane.INFORMATION_MESSAGE)));
         }
     }
 

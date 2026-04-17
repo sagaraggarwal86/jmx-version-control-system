@@ -18,10 +18,10 @@ public final class LockInfo {
 
     @JsonCreator
     public LockInfo(
-            @JsonProperty("pid") long pid,
-            @JsonProperty("hostname") String hostname,
-            @JsonProperty("timestamp") LocalDateTime timestamp,
-            @JsonProperty("jmeterVersion") String jmeterVersion) {
+        @JsonProperty("pid") long pid,
+        @JsonProperty("hostname") String hostname,
+        @JsonProperty("timestamp") LocalDateTime timestamp,
+        @JsonProperty("jmeterVersion") String jmeterVersion) {
         this.pid = pid;
         this.hostname = Objects.requireNonNull(hostname, "hostname must not be null");
         this.timestamp = Objects.requireNonNull(timestamp, "timestamp must not be null");

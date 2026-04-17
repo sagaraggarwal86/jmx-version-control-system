@@ -42,8 +42,8 @@ public final class ScmMenuHandler {
         var context = initializer.getCurrentContext();
         if (context == null || context.isDisposed() || context.isReadOnly()) {
             JOptionPane.showMessageDialog(getParentWindow(),
-                    "No active test plan or read-only mode.",
-                    "JVCS", JOptionPane.WARNING_MESSAGE);
+                "No active test plan or read-only mode.",
+                "JVCS", JOptionPane.WARNING_MESSAGE);
             return null;
         }
         return context;
@@ -126,8 +126,8 @@ public final class ScmMenuHandler {
         var context = initializer.getCurrentContext();
         if (context == null || context.isDisposed()) {
             JOptionPane.showMessageDialog(getParentWindow(),
-                    "No active test plan.",
-                    "JVCS", JOptionPane.WARNING_MESSAGE);
+                "No active test plan.",
+                "JVCS", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -136,8 +136,8 @@ public final class ScmMenuHandler {
         if (context.tryAcquireLock()) {
             if (wasReadWrite) {
                 JOptionPane.showMessageDialog(getParentWindow(),
-                        "You already hold the lock.",
-                        "JVCS", JOptionPane.INFORMATION_MESSAGE);
+                    "You already hold the lock.",
+                    "JVCS", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 initializer.notifyVersionsChanged();
                 Toast.show("Lock acquired — read-write mode restored");
@@ -154,18 +154,18 @@ public final class ScmMenuHandler {
         var lockInfo = context.getLockInfo();
         if (lockInfo != null) {
             lockDetails = "\n\nLock held by:\n" +
-                    "  PID: " + lockInfo.getPid() + "\n" +
-                    "  Host: " + lockInfo.getHostname() + "\n" +
-                    "  Since: " + lockInfo.getTimestamp();
+                "  PID: " + lockInfo.getPid() + "\n" +
+                "  Host: " + lockInfo.getHostname() + "\n" +
+                "  Since: " + lockInfo.getTimestamp();
         }
 
         int confirm = JOptionPane.showConfirmDialog(getParentWindow(),
-                "WARNING: Force releasing the lock may cause data corruption\n" +
-                        "if another JMeter instance is actively using this test plan.\n\n" +
-                        "Only use this if you are certain the other instance is no longer running." +
-                        lockDetails + "\n\nForce release and acquire the lock?",
-                "Force Acquire Lock",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            "WARNING: Force releasing the lock may cause data corruption\n" +
+                "if another JMeter instance is actively using this test plan.\n\n" +
+                "Only use this if you are certain the other instance is no longer running." +
+                lockDetails + "\n\nForce release and acquire the lock?",
+            "Force Acquire Lock",
+            JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (confirm != JOptionPane.YES_OPTION) return;
 
         if (context.forceReleaseLock()) {
@@ -173,8 +173,8 @@ public final class ScmMenuHandler {
             Toast.show("Lock force-acquired — read-write mode restored");
         } else {
             JOptionPane.showMessageDialog(getParentWindow(),
-                    "Failed to acquire the lock.",
-                    "JVCS", JOptionPane.ERROR_MESSAGE);
+                "Failed to acquire the lock.",
+                "JVCS", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -187,9 +187,9 @@ public final class ScmMenuHandler {
 
         if (context.isAtUnprunableCapacity()) {
             JOptionPane.showMessageDialog(getParentWindow(),
-                    "Cannot create checkpoint — at retention limit and all versions are frozen.\n" +
-                            "Increase retention or unfreeze a version in Settings.",
-                    "JVCS", JOptionPane.WARNING_MESSAGE);
+                "Cannot create checkpoint — at retention limit and all versions are frozen.\n" +
+                    "Increase retention or unfreeze a version in Settings.",
+                "JVCS", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -199,7 +199,7 @@ public final class ScmMenuHandler {
         // Save in-memory state to disk first, so the checkpoint captures current changes
         try {
             ActionRouter.getInstance().doActionNow(
-                    new ActionEvent(initializer, ActionEvent.ACTION_PERFORMED, ActionNames.SAVE));
+                new ActionEvent(initializer, ActionEvent.ACTION_PERFORMED, ActionNames.SAVE));
         } catch (Exception e) {
             log.warn("Could not save before checkpoint: {}", e.getMessage());
         }
@@ -227,8 +227,8 @@ public final class ScmMenuHandler {
                     log.warn("Checkpoint failed: {}", cause.getMessage());
                     initializer.notifyVersionsChanged();
                     JOptionPane.showMessageDialog(getParentWindow(),
-                            "Checkpoint failed: " + cause.getMessage(),
-                            "JVCS", JOptionPane.WARNING_MESSAGE);
+                        "Checkpoint failed: " + cause.getMessage(),
+                        "JVCS", JOptionPane.WARNING_MESSAGE);
                 }
             }
         };

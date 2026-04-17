@@ -106,7 +106,7 @@ class SettingsDialogTest {
         Files.writeString(oldDir.resolve("v001.jmxv"), "snapshot");
 
         Method migrateFiles = SettingsDialog.class.getDeclaredMethod(
-                "migrateFiles", java.awt.Window.class, Path.class, Path.class);
+            "migrateFiles", java.awt.Window.class, Path.class, Path.class);
         migrateFiles.setAccessible(true);
 
         migrateFiles.invoke(null, null, oldDir, newDir);
@@ -123,7 +123,7 @@ class SettingsDialogTest {
         Path newDir = tempDir.resolve("target");
 
         Method migrateFiles = SettingsDialog.class.getDeclaredMethod(
-                "migrateFiles", java.awt.Window.class, Path.class, Path.class);
+            "migrateFiles", java.awt.Window.class, Path.class, Path.class);
         migrateFiles.setAccessible(true);
 
         assertDoesNotThrow(() -> migrateFiles.invoke(null, null, oldDir, newDir));
@@ -137,7 +137,7 @@ class SettingsDialogTest {
         Files.writeString(oldDir.resolve("test.txt"), "data");
 
         Method migrateFiles = SettingsDialog.class.getDeclaredMethod(
-                "migrateFiles", java.awt.Window.class, Path.class, Path.class);
+            "migrateFiles", java.awt.Window.class, Path.class, Path.class);
         migrateFiles.setAccessible(true);
 
         migrateFiles.invoke(null, null, oldDir, newDir);
@@ -151,7 +151,7 @@ class SettingsDialogTest {
         Path jmxFile = tempDir.resolve("plan.jmx");
 
         Method resolveStorageDir = SettingsDialog.class.getDeclaredMethod(
-                "resolveStorageDir", Path.class, String.class);
+            "resolveStorageDir", Path.class, String.class);
         resolveStorageDir.setAccessible(true);
 
         Path result = (Path) resolveStorageDir.invoke(null, jmxFile, ".history");
@@ -166,7 +166,7 @@ class SettingsDialogTest {
         String absPath = tempDir.resolve("custom-storage").toString();
 
         Method resolveStorageDir = SettingsDialog.class.getDeclaredMethod(
-                "resolveStorageDir", Path.class, String.class);
+            "resolveStorageDir", Path.class, String.class);
         resolveStorageDir.setAccessible(true);
 
         Path result = (Path) resolveStorageDir.invoke(null, jmxFile, absPath);

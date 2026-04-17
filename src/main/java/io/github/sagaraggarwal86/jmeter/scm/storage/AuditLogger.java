@@ -84,7 +84,7 @@ public final class AuditLogger {
             // Rotate if file exceeds max size
             if (Files.exists(auditFile) && Files.size(auditFile) > MAX_SIZE_BYTES) {
                 Files.move(auditFile, storageDir.resolve(AUDIT_BACKUP),
-                        StandardCopyOption.REPLACE_EXISTING);
+                    StandardCopyOption.REPLACE_EXISTING);
             }
 
             StringBuilder sb = new StringBuilder();
@@ -102,7 +102,7 @@ public final class AuditLogger {
             sb.append("}\n");
 
             Files.writeString(auditFile, sb.toString(),
-                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             log.warn("Could not write audit log: {}", e.getMessage());
         }
@@ -110,9 +110,9 @@ public final class AuditLogger {
 
     private static String escapeJson(String s) {
         return s.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t");
     }
 }

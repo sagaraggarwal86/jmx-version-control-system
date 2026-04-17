@@ -20,12 +20,12 @@ public final class VersionEntry {
 
     @JsonCreator
     public VersionEntry(
-            @JsonProperty("version") int version,
-            @JsonProperty("file") String file,
-            @JsonProperty("timestamp") LocalDateTime timestamp,
-            @JsonProperty("trigger") TriggerType trigger,
-            @JsonProperty("note") String note,
-            @JsonProperty("checksum") String checksum) {
+        @JsonProperty("version") int version,
+        @JsonProperty("file") String file,
+        @JsonProperty("timestamp") LocalDateTime timestamp,
+        @JsonProperty("trigger") TriggerType trigger,
+        @JsonProperty("note") String note,
+        @JsonProperty("checksum") String checksum) {
         this.version = version;
         this.file = Objects.requireNonNull(file, "file must not be null");
         this.timestamp = Objects.requireNonNull(timestamp, "timestamp must not be null");

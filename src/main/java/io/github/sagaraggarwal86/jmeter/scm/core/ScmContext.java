@@ -72,8 +72,8 @@ public final class ScmContext {
      */
     private static Path resolveStorageDir(Path jmxFile) {
         return resolveParent(jmxFile)
-                .resolve(ScmConfigManager.getGlobalStorageLocation())
-                .resolve(extractStem(jmxFile));
+            .resolve(ScmConfigManager.getGlobalStorageLocation())
+            .resolve(extractStem(jmxFile));
     }
 
     /**
@@ -98,8 +98,8 @@ public final class ScmContext {
         dirtyTracker.reset();
 
         log.info("JVCS context initialized for {} ({} versions, {})",
-                jmxFile.getFileName(), versionIndex.getVersions().size(),
-                readOnly ? "read-only" : "read-write");
+            jmxFile.getFileName(), versionIndex.getVersions().size(),
+            readOnly ? "read-only" : "read-write");
     }
 
     /**
@@ -125,7 +125,7 @@ public final class ScmContext {
                 stream.filter(Files::isRegularFile).forEach(file -> {
                     try {
                         Files.move(file, storageDir.resolve(file.getFileName()),
-                                StandardCopyOption.REPLACE_EXISTING);
+                            StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException e) {
                         log.warn("Could not migrate {}: {}", file.getFileName(), e.getMessage());
                     }
@@ -235,8 +235,8 @@ public final class ScmContext {
         if (versionIndex.getVersions().size() < maxRetention) return false;
         VersionEntry latest = versionIndex.getLatestVersion();
         return versionIndex.getVersions().stream()
-                .filter(e -> latest == null || e.getVersion() != latest.getVersion())
-                .allMatch(e -> versionIndex.isPinned(e.getVersion()));
+            .filter(e -> latest == null || e.getVersion() != latest.getVersion())
+            .allMatch(e -> versionIndex.isPinned(e.getVersion()));
     }
 
     /**
@@ -251,7 +251,7 @@ public final class ScmContext {
         checkNotDisposed();
         ensureWriteLock();
         VersionEntry entry = snapshotEngine.createSnapshot(
-                jmxFile, storageDir, versionIndex, trigger, note);
+            jmxFile, storageDir, versionIndex, trigger, note);
         if (entry != null) {
             dirtyTracker.reset(entry.getChecksum());
             if (trigger == TriggerType.CHECKPOINT) {

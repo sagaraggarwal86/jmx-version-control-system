@@ -36,15 +36,45 @@ behavior), stability over novelty, correctness over features.
 - Responses: concise — bug-fix explanation ≤10 lines; proposal ≤1 table + 3 bullets; architecture change requires a
   table. No filler, no restating the request.
 - Feedback: direct, not diplomatic. Flag concrete concerns even when not asked.
-- For every decision point, present a table and highlight the recommendation:
+- For non-trivial decisions (≥2 options with materially different risk/effort/impact), present a table and highlight the
+  recommendation. Trivial choices use prose.
 
   | Option | Risk | Effort | Impact | Recommendation |
-    |--------|------|--------|--------|----------------|
+        |--------|------|--------|--------|----------------|
+
+## Examples
+
+### Decision-table usage
+
+**Trivial — prose, no table:**
+> Rename `extractStem` → `extractFileStem` in `FileOperations` for clarity. Same class, same signature. Proceed?
+
+**Non-trivial — table:**
+> Two approaches for detecting concurrent snapshot writes:
+>
+> | Option | Risk | Effort | Impact | Recommendation |
+> |--------|------|--------|--------|----------------|
+> | Check `.lock` timestamp before write (current design) | Narrow race window remains | S | Consistent with app-level lock | ✓ |
+> | Switch to `FileLock` on `index.json` | Breaks cross-process on NFS/SMB | M | Stricter but fragile | |
+
+### Multi-file change presentation
+
+**Bad:** "I'll edit `SnapshotEngine.java` first, then show the next file."
+
+**Good:** "3 files, apply in order: (1) `VersionEntry.java` — add field; (2) `IndexManager.java` — serialize field;
+(3) `SnapshotEngine.java` — populate field. All diffs below."
+
+### Rollback message
+
+**Bad:** *(silently reverts)*
+
+**Good:** "Reverting `RetentionManager.java` and `SnapshotEngine.java` to the last approved state (commit `b2e4d58`).
+Ready for next instruction."
 
 ## Environment
 
 - JDK 17, Maven 3.8+. All runtime deps `provided` (JMeter + Jackson on JMeter classpath). Thin JAR, no shading.
-- Test stack: JUnit 5.10.1 + Mockito 5.8.0. Jackson 2.16.1.
+- Test stack: JUnit 6.0.3 + Mockito 5.23.0. Jackson 2.21.2.
 - Shell: bash on Windows (Unix syntax — `/dev/null`, forward slashes). `find`/`grep` via Bash tool are fork-unstable;
   use Glob/Grep tools instead.
 - UI changes cannot be exercised without a live JMeter runtime — say so explicitly rather than claiming success.
@@ -158,42 +188,59 @@ fallback.
 
 ## Enforced invariants (do not violate)
 
-- **`index.json` schema is public** — field renames are breaking changes. Bump `schemaVersion` if structure changes.
-- **Storage location SSoT is `user.properties`** — `index.json.storageLocation` is a record, not a resolver. Runtime
-  change requires restart; no hot-reload.
-- **Retention floor**: cannot reduce below `frozen count + 1` (latest always preserved). Settings dialog must block with
-  a message.
-- **Delete guard**: latest and frozen versions cannot be deleted. `isSelectable()` is the single predicate for checkbox
-  eligibility.
-- **Restore safety**: append-only. Snapshot current state (RESTORE, note `"Replaced by vN"`) before restoring. Target
-  copied to temp before auto-snapshot to survive pruning. Blocked at unprunable capacity (`isAtUnprunableCapacity()`).
-- **Lock**: hostname + PID ownership (hostname resolved once at class load). `ensureWriteLock()` on every write op. L
-  button: verify → polite acquire → force release with confirmation.
-- **Missing snapshots**: `refresh()` detects via `Files.exists()`, disables Restore/Export with tooltip, WARN log.
-  Delete cleans orphaned entries.
-- **Storage migration**: GUI change → Migrate/Reset/Cancel. Migrate = dispose → move → reinit. Reset = zip old files to
-  `<stem>_backup_<yyyyMMdd_HHmmss>.zip` in parent, delete originals, start fresh. Partial failures handled per file.
-- **Export**: default filename `<jmx-name>_v<N>.jmx`, filter `"JMeter (.jmx)"`.
-- **Read-only lock dialog**: shows hostname, PID, timestamp from `.lock`.
+1. **`index.json` schema is public** — field renames are breaking changes. Bump `schemaVersion` if structure changes.
+2. **Storage location SSoT is `user.properties`** — `index.json.storageLocation` is a record, not a resolver. Runtime
+   change requires restart; no hot-reload.
+3. **Retention floor**: cannot reduce below `frozen count + 1` (latest always preserved). Settings dialog must block
+   with a message.
+4. **Delete guard**: latest and frozen versions cannot be deleted. `isSelectable()` is the single predicate for
+   checkbox eligibility.
+5. **Restore safety**: append-only. Snapshot current state (RESTORE, note `"Replaced by vN"`) before restoring. Target
+   copied to temp before auto-snapshot to survive pruning. Blocked at unprunable capacity (`isAtUnprunableCapacity()`).
+6. **Lock**: hostname + PID ownership (hostname resolved once at class load). `ensureWriteLock()` on every write op. L
+   button: verify → polite acquire → force release with confirmation.
+7. **Missing snapshots**: `refresh()` detects via `Files.exists()`, disables Restore/Export with tooltip, WARN log.
+   Delete cleans orphaned entries.
+8. **Storage migration**: GUI change → Migrate/Reset/Cancel. Migrate = dispose → move → reinit. Reset = zip old files
+   to `<stem>_backup_<yyyyMMdd_HHmmss>.zip` in parent, delete originals, start fresh. Partial failures handled per
+   file.
+9. **Export**: default filename `<jmx-name>_v<N>.jmx`, filter `"JMeter (.jmx)"`.
+10. **Read-only lock dialog**: shows hostname, PID, timestamp from `.lock`.
+11. **`## Enforced invariants` heading is load-bearing** — extracted verbatim by `.github/workflows/pr-review.yml`. Do
+    not rename, split, or change its position relative to the next `##` heading.
 
 ## Self-Maintenance
 
 - **Ownership split**: `CLAUDE.md` = rules and context for Claude. `README.md` = user-facing features, install, config.
   When both need updating, change each in its own lane — do not duplicate content across files.
-- **Auto-update CLAUDE.md**: after a session that changes design, architecture, invariants, or class responsibilities,
-  review this file in the same session. Remove stale entries. After the update, perform **one** re-review pass (not
-  recursive) against:
-    - **Accuracy** — every claim matches current code; terms used consistently across sections.
-    - **Completeness** — every class, invariant, integration point, and lifecycle hook that affects decisions is
-      documented.
-    - **Precision** — vague terms replaced with concrete ones (token budgets, file paths, exact API names).
-    - **Density** — every line earns its tokens; no filler, no hedging.
-    - **Single source of truth** — each fact lives in one section; others cross-reference.
-- **Auto-update README.md**: after feature changes, keep README feature tables and config sections current. Apply the
-  README update rules below.
 - **Auto-compact**: suggest `/compact` before context becomes unwieldy.
 
+### CLAUDE.md update rules
+
+Trigger: session changes design, architecture, invariants, or class responsibilities.
+
+- Review this file in the same session. Remove stale entries.
+
+**Do not put in CLAUDE.md**:
+
+- Implementation details that rot on refactor (method signatures, minor helper behaviors).
+- Facts derivable from `git log` / `git blame` / current code.
+- Ephemeral task state (in-progress work, TODOs).
+- Restatement of README content (user-facing features, install steps).
+- Duplicates of facts already stated elsewhere in this file.
+
+**Final pass — every item must hold**:
+
+- **Accuracy** — every claim matches current code; terms used consistently across sections.
+- **Completeness** — every class, invariant, integration point, and lifecycle hook that affects decisions is
+  documented.
+- **Precision** — vague terms replaced with concrete ones (token budgets, file paths, exact API names).
+- **Density** — every line earns its tokens; no filler, no hedging.
+- **Single source of truth** — each fact lives in one section; others cross-reference.
+
 ### README update rules
+
+Trigger: user-facing feature changes (feature tables, config sections).
 
 When editing `README.md`, every change must satisfy:
 
@@ -211,3 +258,11 @@ When editing `README.md`, every change must satisfy:
    links to it from Contributing.
 7. **Explicit auto-behavior** — when documenting auto-activation, auto-recovery, or auto-snapshot, state what is created
    and where.
+8. **Badges: maven-metadata over maven-central** — for release/version badges, use the
+   `maven-metadata/v?metadataUrl=…repo1.maven.org…/maven-metadata.xml` variant rather than `maven-central/v/…`. The
+   latter hits `search.maven.org`'s stale Solr index; the former reads the authoritative `maven-metadata.xml` and
+   updates within minutes of a deploy.
+9. **Callouts over subsections** — use `> [!NOTE]` / `> [!IMPORTANT]` for 1-2 line asides. Don't spawn a dedicated `###`
+   section for a two-sentence note.
+10. **Post-edit review** — verify all 5 dimensions (Accuracy, Completeness, Precision, Density, Single source of
+    truth). See Self-Maintenance for procedural checks.

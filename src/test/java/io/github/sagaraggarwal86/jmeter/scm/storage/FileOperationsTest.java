@@ -110,8 +110,8 @@ class FileOperationsTest {
         Files.writeString(file2, "content B");
 
         assertNotEquals(
-                FileOperations.computeChecksum(file1),
-                FileOperations.computeChecksum(file2));
+            FileOperations.computeChecksum(file1),
+            FileOperations.computeChecksum(file2));
     }
 
     @Test
@@ -141,10 +141,10 @@ class FileOperationsTest {
     @Test
     void createSnapshotRejectsNull() {
         assertThrows(NullPointerException.class, () ->
-                FileOperations.createSnapshot(null, tempDir, "v001.jmxv"));
+            FileOperations.createSnapshot(null, tempDir, "v001.jmxv"));
         assertThrows(NullPointerException.class, () ->
-                FileOperations.createSnapshot(tempDir.resolve("a"), null, "v001.jmxv"));
+            FileOperations.createSnapshot(tempDir.resolve("a"), null, "v001.jmxv"));
         assertThrows(NullPointerException.class, () ->
-                FileOperations.createSnapshot(tempDir.resolve("a"), tempDir, null));
+            FileOperations.createSnapshot(tempDir.resolve("a"), tempDir, null));
     }
 }

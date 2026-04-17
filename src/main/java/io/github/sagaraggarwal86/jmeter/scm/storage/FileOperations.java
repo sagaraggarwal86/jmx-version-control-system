@@ -44,14 +44,14 @@ public final class FileOperations {
         module.addSerializer(LocalDateTime.class, new JsonSerializer<>() {
             @Override
             public void serialize(LocalDateTime value, JsonGenerator gen, SerializerProvider provider)
-                    throws IOException {
+                throws IOException {
                 gen.writeString(value.toString());
             }
         });
         module.addDeserializer(LocalDateTime.class, new JsonDeserializer<>() {
             @Override
             public LocalDateTime deserialize(JsonParser p, DeserializationContext ctxt)
-                    throws IOException {
+                throws IOException {
                 return LocalDateTime.parse(p.getText());
             }
         });
@@ -222,15 +222,15 @@ public final class FileOperations {
         }
         try (var stream = Files.list(storageDir)) {
             return stream
-                    .filter(Files::isRegularFile)
-                    .mapToLong(p -> {
-                        try {
-                            return Files.size(p);
-                        } catch (IOException e) {
-                            return 0L;
-                        }
-                    })
-                    .sum();
+                .filter(Files::isRegularFile)
+                .mapToLong(p -> {
+                    try {
+                        return Files.size(p);
+                    } catch (IOException e) {
+                        return 0L;
+                    }
+                })
+                .sum();
         } catch (IOException e) {
             log.warn("Could not calculate storage size: {}", e.getMessage());
             return 0L;

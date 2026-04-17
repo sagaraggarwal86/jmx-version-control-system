@@ -56,7 +56,7 @@ public final class SnapshotEngine {
             // Dedup: skip auto-checkpoints if unchanged. CHECKPOINT and RESTORE always create.
             VersionEntry latest = index.getLatestVersion();
             if (trigger == TriggerType.AUTO_CHECKPOINT
-                    && latest != null && checksum.equals(latest.getChecksum())) {
+                && latest != null && checksum.equals(latest.getChecksum())) {
                 log.debug("Skipping {} — identical to latest version {}", trigger, latest.getVersion());
                 return null;
             }
@@ -67,7 +67,7 @@ public final class SnapshotEngine {
             FileOperations.createSnapshot(jmxFile, storageDir, fileName);
 
             VersionEntry entry = new VersionEntry(
-                    versionNumber, fileName, LocalDateTime.now(), trigger, note, checksum);
+                versionNumber, fileName, LocalDateTime.now(), trigger, note, checksum);
             index.addVersion(entry);
 
             retentionManager.pruneIfNeeded(storageDir, index);
@@ -95,14 +95,14 @@ public final class SnapshotEngine {
         Objects.requireNonNull(index, "index must not be null");
 
         VersionEntry target = index.getVersions().stream()
-                .filter(e -> e.getVersion() == versionNumber)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Version " + versionNumber + " not found"));
+            .filter(e -> e.getVersion() == versionNumber)
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Version " + versionNumber + " not found"));
 
         Path snapshotPath = storageDir.resolve(target.getFile());
         if (!Files.exists(snapshotPath)) {
             throw new IOException("Snapshot file missing: " + target.getFile()
-                    + ". The version entry exists in the index but the file was deleted from disk.");
+                + ". The version entry exists in the index but the file was deleted from disk.");
         }
 
         // Copy target to temp file before auto-snapshot — pruning may delete it
@@ -141,9 +141,9 @@ public final class SnapshotEngine {
         }
 
         VersionEntry target = index.getVersions().stream()
-                .filter(e -> e.getVersion() == versionNumber)
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Version " + versionNumber + " not found"));
+            .filter(e -> e.getVersion() == versionNumber)
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Version " + versionNumber + " not found"));
 
         Path snapshotFile = storageDir.resolve(target.getFile());
         if (Files.exists(snapshotFile)) {
