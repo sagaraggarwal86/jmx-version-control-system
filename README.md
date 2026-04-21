@@ -237,16 +237,55 @@ my-test-plan.jmx                    <-- working file
 
 ## Troubleshooting
 
-| Problem                              | Solution                                                                                   |
-|--------------------------------------|--------------------------------------------------------------------------------------------|
-| Plugin not visible after install     | Verify JAR is in `<JMETER_HOME>/lib/ext/`. Restart JMeter.                                 |
-| Toolbar buttons missing              | Check `scm.toolbar.visible=true` in `user.properties`. Reflection may fail on non-5.6.3.   |
-| "Read-Only Mode" dialog on open      | Another JMeter instance holds the lock. Use L button to force release if the other closed. |
-| History panel empty                  | Save the test plan at least once. New/unsaved plans have no history.                       |
-| Restore button disabled              | Snapshot file missing from disk. Delete the orphaned entry to clean up.                    |
-| "Cannot restore" at capacity         | At retention limit with all versions frozen. Increase retention or unfreeze a version.     |
-| "Cannot reduce retention" error      | Unfreeze some versions first. Floor = frozen count + 1.                                    |
-| Versions not pruned at max retention | All non-latest versions are frozen. Unfreeze to allow FIFO pruning.                        |
+| Problem                                   | Solution                                                                                        |
+|-------------------------------------------|-------------------------------------------------------------------------------------------------|
+| Plugin not visible after install          | Verify JAR is in `<JMETER_HOME>/lib/ext/`. Restart JMeter.                                      |
+| Toolbar buttons missing                   | Check `scm.toolbar.visible=true` in `user.properties`. Reflection may fail on non-5.6.3.        |
+| "Read-Only Mode" dialog on open           | Another JMeter instance holds the lock. Use L button to force release if the other closed.     |
+| History panel empty                       | Save the test plan at least once. New/unsaved plans have no history.                            |
+| Restore button disabled                   | Snapshot file missing from disk. Delete the orphaned entry to clean up.                         |
+| "Cannot restore" at capacity              | At retention limit with all versions frozen. Increase retention or unfreeze a version.          |
+| "Cannot reduce retention" error           | Unfreeze some versions first. Floor = frozen count + 1.                                         |
+| Versions not pruned at max retention      | All non-latest versions are frozen. Unfreeze to allow FIFO pruning.                             |
+| `UnsupportedClassVersionError` on startup | Java older than 17 — use a [portable Java 17](#using-a-portable-java-17-when-yours-is-too-old). |
+
+### Using a Portable Java 17 (when yours is too old)
+
+JVCS needs Java 17. If your system's Java is older and you can't change it (e.g. locked corporate machine),
+use a portable Java 17 — no installer, no admin rights, and your system Java stays untouched.
+
+1. **Download Java 17** (JDK, portable `.zip` for Windows or `.tar.gz` for Linux/macOS) from any OpenJDK
+   provider — e.g. [Adoptium](https://adoptium.net/temurin/releases/?version=17&package=jdk),
+   [Zulu](https://www.azul.com/downloads/), or [Corretto](https://aws.amazon.com/corretto/). Make sure
+   you pick **Java 17** — some provider pages default to a newer version.
+2. **Unzip anywhere you own** — for example `C:\Users\<you>\jdk` or `~/jdk`. Check it has a `bin` folder
+   inside. The unzipped folder is usually named like `jdk-17.0.10+7` — either rename it to `jdk` or use
+   its actual name in the paths below.
+3. **Edit the JMeter launch script** in `<JMETER_HOME>/bin/` and add two lines near the top:
+    - Windows: `jmeter.bat`
+    - Linux / macOS: `jmeter.sh`
+
+   **Windows** — just after `@echo off`:
+   ```batch
+   set JAVA_HOME=C:\Users\<you>\jdk
+   set PATH=%JAVA_HOME%\bin;%PATH%
+   ```
+
+   **Linux / macOS** — just after the `#!/usr/bin/env bash` line:
+   ```bash
+   export JAVA_HOME="$HOME/jdk"
+   export PATH="$JAVA_HOME/bin:$PATH"
+   ```
+   On macOS, use `$HOME/jdk/Contents/Home` instead (macOS tucks Java into a `Contents/Home` subfolder).
+
+4. **Check it worked.** Start JMeter → **Help** → **About Apache JMeter** — should show Java 17.x.
+
+> [!TIP]
+> These lines only take effect inside this script — other apps on your machine still use your system Java.
+> If you upgrade JMeter later, add the lines again to the new script.
+
+> [!TIP]
+> On macOS, if Java is blocked by Gatekeeper, run: `xattr -r -d com.apple.quarantine ~/jdk`
 
 ---
 
