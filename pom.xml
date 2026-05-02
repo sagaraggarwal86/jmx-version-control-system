@@ -66,7 +66,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <jmeter.version>5.6.3</jmeter.version>
-        <jackson.version>2.21.2</jackson.version>
+        <jackson.version>2.21.3</jackson.version>
         <junit.version>6.0.3</junit.version>
         <mockito.version>5.23.0</mockito.version>
 
